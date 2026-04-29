@@ -1,7 +1,8 @@
 import React, { createContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Routine, Set, Exercise, WorkoutSession } from '../types';
-import { getMockRoutines } from '../services/routine.service';
+import { routineService } from '../services/routine.service';
+import { exerciseService } from '../services/exercise.service';
 
 interface WorkoutContextType {
   routines: Routine[];
@@ -12,25 +13,15 @@ interface WorkoutContextType {
   finishWorkout: (startTime: number) => WorkoutSession | null;
   updateSet: (exerciseIndex: number, setIndex: number, data: Partial<Set>) => void;
   isLoading: boolean;
-  addRoutine: (routine: Routine) => void;
-  updateRoutine: (id: string, routine: Routine) => void;
-  deleteRoutine: (id: string) => void;
-  addExerciseToLibrary: (exercise: Exercise) => void;
+  addRoutine: (routine: Omit<Routine, 'id'>) => Promise<void>;
+  updateRoutine: (id: string, routine: Routine) => Promise<void>;
+  deleteRoutine: (id: string) => Promise<void>;
+  addExerciseToLibrary: (exercise: { name: string; muscleGroup: string }) => Promise<void>;
 }
 
 export const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_KEY_ROUTINES = 'gymroutine_routines';
-const LOCAL_STORAGE_KEY_EXERCISES = 'gymroutine_exercises';
 const LOCAL_STORAGE_KEY_HISTORY = 'gymroutine_history';
-
-const initialLibrary: Exercise[] = [
-  { id: 'lib-1', name: 'Press de Banca', muscleGroup: 'pecho', sets: [] },
-  { id: 'lib-2', name: 'Dominadas', muscleGroup: 'espalda', sets: [] },
-  { id: 'lib-3', name: 'Sentadillas', muscleGroup: 'piernas', sets: [] },
-  { id: 'lib-4', name: 'Curl de Bíceps', muscleGroup: 'biceps', sets: [] },
-  { id: 'lib-5', name: 'Press Militar', muscleGroup: 'hombros', sets: [] },
-];
 
 export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -41,45 +32,31 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   useEffect(() => {
     const initializeData = async () => {
-      const savedRoutines = localStorage.getItem(LOCAL_STORAGE_KEY_ROUTINES);
-      const savedExercises = localStorage.getItem(LOCAL_STORAGE_KEY_EXERCISES);
+      setIsLoading(true);
+      try {
+        const [fetchedRoutines, fetchedExercises] = await Promise.all([
+          routineService.getRoutines(),
+          exerciseService.getExercises()
+        ]);
+        
+        setRoutines(fetchedRoutines);
+        setExerciseLibrary(fetchedExercises);
+      } catch (error) {
+        console.error('Error fetching data from API', error);
+      }
+
       const savedHistory = localStorage.getItem(LOCAL_STORAGE_KEY_HISTORY);
-
-      if (savedRoutines) {
-        setRoutines(JSON.parse(savedRoutines));
-      } else {
-        const data = await getMockRoutines();
-        setRoutines(data);
-        localStorage.setItem(LOCAL_STORAGE_KEY_ROUTINES, JSON.stringify(data));
-      }
-
-      if (savedExercises) {
-        setExerciseLibrary(JSON.parse(savedExercises));
-      } else {
-        setExerciseLibrary(initialLibrary);
-        localStorage.setItem(LOCAL_STORAGE_KEY_EXERCISES, JSON.stringify(initialLibrary));
-      }
-
       if (savedHistory) {
         setWorkoutHistory(JSON.parse(savedHistory));
       }
 
       setIsLoading(false);
     };
+    
+    // Solo inicializar si hay token, pero por ahora lo llamamos siempre. 
+    // Dependiendo de si la API falla retornará 401 y el axios interceptor lo maneja.
     initializeData();
   }, []);
-
-  useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem(LOCAL_STORAGE_KEY_ROUTINES, JSON.stringify(routines));
-    }
-  }, [routines, isLoading]);
-
-  useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem(LOCAL_STORAGE_KEY_EXERCISES, JSON.stringify(exerciseLibrary));
-    }
-  }, [exerciseLibrary, isLoading]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -87,20 +64,24 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [workoutHistory, isLoading]);
 
-  const addRoutine = (routine: Routine) => {
-    setRoutines([...routines, routine]);
+  const addRoutine = async (routine: Omit<Routine, 'id'>) => {
+    const newRoutine = await routineService.createRoutine(routine);
+    setRoutines([...routines, newRoutine]);
   };
 
-  const updateRoutine = (id: string, updatedRoutine: Routine) => {
-    setRoutines(routines.map(r => r.id === id ? updatedRoutine : r));
+  const updateRoutine = async (id: string, updatedRoutine: Routine) => {
+    const newRoutine = await routineService.updateRoutine(id, updatedRoutine);
+    setRoutines(routines.map(r => r.id === id ? newRoutine : r));
   };
 
-  const deleteRoutine = (id: string) => {
+  const deleteRoutine = async (id: string) => {
+    await routineService.deleteRoutine(id);
     setRoutines(routines.filter(r => r.id !== id));
   };
 
-  const addExerciseToLibrary = (exercise: Exercise) => {
-    setExerciseLibrary([...exerciseLibrary, exercise]);
+  const addExerciseToLibrary = async (exercise: { name: string; muscleGroup: string }) => {
+    const newExercise = await exerciseService.createExercise(exercise);
+    setExerciseLibrary([...exerciseLibrary, newExercise]);
   };
 
   const startWorkout = (routineId: string) => {

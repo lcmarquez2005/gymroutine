@@ -6,12 +6,18 @@ import { Mail, Lock, Loader2, Maximize } from 'lucide-react';
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const { login, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     if (email && password) {
-      await login(email);
+      try {
+        await login(email, password);
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Error al iniciar sesión. Revisa tus credenciales.');
+      }
     }
   };
 
@@ -37,6 +43,11 @@ export const Login: React.FC = () => {
       </button>
 
       <h3 className="text-xl font-bold text-slate-800 text-center mb-6 mt-4">Iniciar Sesión</h3>
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">

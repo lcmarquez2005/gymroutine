@@ -30,7 +30,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  training_days: TrainingDay[];
+  trainingDays: TrainingDay[];
 }
 
 export interface WorkoutSession {

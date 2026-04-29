@@ -20,6 +20,7 @@ export const RoutineEditor: React.FC = () => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isEditing && id) {
@@ -43,24 +44,33 @@ export const RoutineEditor: React.FC = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) return alert('El nombre de la rutina es obligatorio');
+    setIsSaving(true);
 
-    const newRoutine: Routine = {
-      id: isEditing ? id! : `routine-${Date.now()}`,
-      name,
-      targetMuscleGroup,
-      assignedDays,
-      exercises
-    };
-
-    if (isEditing) {
-      updateRoutine(id!, newRoutine);
-    } else {
-      addRoutine(newRoutine);
+    try {
+      if (isEditing) {
+        await updateRoutine(id!, {
+          id: id!,
+          name,
+          targetMuscleGroup,
+          assignedDays,
+          exercises
+        });
+      } else {
+        await addRoutine({
+          name,
+          targetMuscleGroup,
+          assignedDays,
+          exercises
+        });
+      }
+      navigate('/routines');
+    } catch (error) {
+      console.error(error);
+      alert('Ocurrió un error al guardar la rutina');
+      setIsSaving(false);
     }
-    
-    navigate('/routines');
   };
 
   const handleAddExercise = (exercise: Exercise) => {
@@ -117,10 +127,10 @@ export const RoutineEditor: React.FC = () => {
           </h1>
           <button 
             onClick={handleSave}
-            disabled={!name.trim()}
+            disabled={!name.trim() || isSaving}
             className="p-2 -mr-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
           >
-            <Save size={24} />
+            <Save size={24} className={isSaving ? "animate-pulse" : ""} />
           </button>
         </div>
 

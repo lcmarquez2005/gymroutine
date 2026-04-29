@@ -7,18 +7,29 @@ export const Register: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoading } = useAuth(); // Usamos login provisoriamente para registrar y entrar
+  const [error, setError] = useState('');
+  const { register, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     if (name && email && password) {
-      await login(email); // Simula el registro logueando de una vez
+      try {
+        await register(name, email, password);
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Error al registrar la cuenta.');
+      }
     }
   };
 
   return (
     <div>
       <h3 className="text-xl font-bold text-slate-800 text-center mb-6">Crear Cuenta</h3>
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
