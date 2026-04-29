@@ -76,19 +76,18 @@ export const RoutineEditor: React.FC = () => {
   const handleAddExercise = (exercise: Exercise) => {
     const newEx = {
       ...exercise,
-      id: `ex-${Date.now()}-${Math.random()}`, 
       sets: [{ id: `set-${Date.now()}`, reps: 0, weight: 0, completed: false }]
     };
     setExercises([...exercises, newEx]);
   };
 
-  const handleRemoveExercise = (exId: string) => {
-    setExercises(exercises.filter(ex => ex.id !== exId));
+  const handleRemoveExercise = (exIndex: number) => {
+    setExercises(exercises.filter((_, idx) => idx !== exIndex));
   };
 
-  const handleAddSet = (exerciseId: string) => {
-    setExercises(exercises.map(ex => {
-      if (ex.id === exerciseId) {
+  const handleAddSet = (exIndex: number) => {
+    setExercises(exercises.map((ex, idx) => {
+      if (idx === exIndex) {
         return {
           ...ex,
           sets: [...ex.sets, { id: `set-${Date.now()}-${Math.random()}`, reps: 0, weight: 0, completed: false }]
@@ -98,9 +97,9 @@ export const RoutineEditor: React.FC = () => {
     }));
   };
 
-  const handleRemoveSet = (exerciseId: string, setId: string) => {
-    setExercises(exercises.map(ex => {
-      if (ex.id === exerciseId) {
+  const handleRemoveSet = (exIndex: number, setId: string) => {
+    setExercises(exercises.map((ex, idx) => {
+      if (idx === exIndex) {
         return {
           ...ex,
           sets: ex.sets.filter(s => s.id !== setId)
@@ -201,14 +200,14 @@ export const RoutineEditor: React.FC = () => {
 
             <div className="space-y-4">
               {exercises.map((ex, index) => (
-                <div key={ex.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                <div key={`${ex.id}-${index}`} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                   <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <GripVertical size={16} className="text-slate-400 cursor-move" />
                       <span className="font-bold text-slate-800">{index + 1}. {ex.name}</span>
                     </div>
                     <button 
-                      onClick={() => handleRemoveExercise(ex.id)}
+                      onClick={() => handleRemoveExercise(index)}
                       className="text-slate-400 hover:text-red-500 p-1"
                     >
                       <Trash2 size={16} />
@@ -241,7 +240,7 @@ export const RoutineEditor: React.FC = () => {
                            <span className="text-slate-600 bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">Objetivo: Reps/Peso en vivo</span>
                         </div>
                         <button 
-                          onClick={() => handleRemoveSet(ex.id, set.id)}
+                          onClick={() => handleRemoveSet(index, set.id)}
                           className="ml-auto text-slate-300 hover:text-red-500"
                         >
                           <X size={16} />
@@ -249,7 +248,7 @@ export const RoutineEditor: React.FC = () => {
                       </div>
                     ))}
                     <button 
-                      onClick={() => handleAddSet(ex.id)}
+                      onClick={() => handleAddSet(index)}
                       className="w-full mt-2 py-2 text-sm font-bold text-blue-500 border border-dashed border-blue-200 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-1"
                     >
                       <Plus size={16} /> Añadir Set

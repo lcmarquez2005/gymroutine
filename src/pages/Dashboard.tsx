@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkout } from '../hooks/useWorkout';
-import { Calendar, PlayCircle, Plus } from 'lucide-react';
+import { Calendar, PlayCircle, Plus, Star } from 'lucide-react';
 
 const DAYS_OF_WEEK = [
   { key: 'lunes', label: 'L' },
@@ -15,7 +15,7 @@ const DAYS_OF_WEEK = [
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { routines, isLoading, startWorkout } = useWorkout();
+  const { routines, isLoading, startWorkout, toggleFavoriteRoutine } = useWorkout();
   
   // Por defecto empezamos el lunes en esta simulación, o calculamos el dia actual
   const todayIndex = (new Date().getDay() + 6) % 7; // Lunes = 0, Domingo = 6
@@ -77,7 +77,19 @@ export const Dashboard: React.FC = () => {
                 className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300 flex justify-between items-center"
               >
                 <div>
-                  <h3 className="font-bold text-lg text-slate-800">{routine.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-lg text-slate-800">{routine.name}</h3>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavoriteRoutine(routine.id);
+                      }}
+                      className="text-yellow-400 hover:scale-110 transition-transform"
+                      title={routine.isFavorite ? "Quitar de favoritos" : "Marcar como favorito"}
+                    >
+                      <Star size={20} fill={routine.isFavorite ? "currentColor" : "none"} />
+                    </button>
+                  </div>
                   <p className="text-sm text-slate-500 mt-1 capitalize">{routine.exercises.length} Ejercicios • {routine.targetMuscleGroup}</p>
                 </div>
                 <button 

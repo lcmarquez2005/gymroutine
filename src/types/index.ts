@@ -19,6 +19,7 @@ export interface Routine {
   targetMuscleGroup: string;
   exercises: Exercise[];
   assignedDays?: string[];
+  isFavorite?: boolean;
 }
 
 export interface TrainingDay {

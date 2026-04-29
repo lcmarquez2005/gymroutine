@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkout } from '../hooks/useWorkout';
-import { Plus, Settings, Dumbbell, Calendar as CalendarIcon, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Settings, Dumbbell, Calendar as CalendarIcon, Trash2, Edit2, Star } from 'lucide-react';
 
 export const RoutinesManager: React.FC = () => {
-  const { routines, deleteRoutine } = useWorkout();
+  const { routines, deleteRoutine, toggleFavoriteRoutine } = useWorkout();
   const navigate = useNavigate();
 
   const DAYS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
@@ -49,6 +49,13 @@ export const RoutinesManager: React.FC = () => {
                   <p className="text-xs text-slate-500 capitalize">{routine.exercises.length} Ejercicios • {routine.targetMuscleGroup}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => toggleFavoriteRoutine(routine.id)}
+                    className="p-2 text-yellow-400 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors"
+                    title={routine.isFavorite ? "Quitar de favoritos" : "Marcar como favorito"}
+                  >
+                    <Star size={18} fill={routine.isFavorite ? "currentColor" : "none"} />
+                  </button>
                   <button 
                     onClick={() => navigate(`/routines/${routine.id}/edit`)}
                     className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

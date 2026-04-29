@@ -17,6 +17,7 @@ interface WorkoutContextType {
   updateRoutine: (id: string, routine: Routine) => Promise<void>;
   deleteRoutine: (id: string) => Promise<void>;
   addExerciseToLibrary: (exercise: { name: string; muscleGroup: string }) => Promise<void>;
+  toggleFavoriteRoutine: (id: string) => Promise<void>;
 }
 
 export const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -77,6 +78,14 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   const deleteRoutine = async (id: string) => {
     await routineService.deleteRoutine(id);
     setRoutines(routines.filter(r => r.id !== id));
+  };
+
+  const toggleFavoriteRoutine = async (id: string) => {
+    const routine = routines.find(r => r.id === id);
+    if (routine) {
+      const updatedRoutine = { ...routine, isFavorite: !routine.isFavorite };
+      await updateRoutine(id, updatedRoutine);
+    }
   };
 
   const addExerciseToLibrary = async (exercise: { name: string; muscleGroup: string }) => {
@@ -158,7 +167,8 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       addRoutine,
       updateRoutine,
       deleteRoutine,
-      addExerciseToLibrary
+      addExerciseToLibrary,
+      toggleFavoriteRoutine
     }}>
       {children}
     </WorkoutContext.Provider>
