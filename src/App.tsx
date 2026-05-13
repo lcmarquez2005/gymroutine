@@ -16,31 +16,27 @@ import './index.css';
 function App() {
   return (
     <AuthProvider>
-      <WorkoutProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route element={<AuthLayout />}>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-            </Route>
-            
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/routines" element={<RoutinesManager />} />
-              <Route path="/profile" element={<Profile />} />
-            </Route>
-
-            {/* Rutas fuera del MainLayout (sin BottomNav) */}
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Route>
+          
+          <Route element={<WorkoutProvider><MainLayout /></WorkoutProvider>}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/routines" element={<RoutinesManager />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/workout/:routineId" element={<ActiveWorkout />} />
             <Route path="/workout-summary" element={<WorkoutSummary />} />
             <Route path="/routines/new" element={<RoutineEditor />} />
             <Route path="/routines/:id/edit" element={<RoutineEditor />} />
+          </Route>
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </WorkoutProvider>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useWorkout } from '../hooks/useWorkout';
-import type { Routine, Exercise } from '../types';
+import type { Exercise } from '../types';
 import { ChevronLeft, Save, Plus, Trash2, GripVertical, X } from 'lucide-react';
 import { ExerciseSelectorModal } from '../components/ExerciseSelectorModal';
 
 const DAYS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+
+// Extendemos el tipo para uso local en el editor
+interface EditingExercise extends Exercise {
+  tempId: string;
+}
 
 export const RoutineEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,7 +22,7 @@ export const RoutineEditor: React.FC = () => {
   const [name, setName] = useState('');
   const [targetMuscleGroup, setTargetMuscleGroup] = useState('pecho');
   const [assignedDays, setAssignedDays] = useState<string[]>([]);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [exercises, setExercises] = useState<EditingExercise[]>([]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -29,7 +34,11 @@ export const RoutineEditor: React.FC = () => {
         setName(routineToEdit.name);
         setTargetMuscleGroup(routineToEdit.targetMuscleGroup);
         setAssignedDays(routineToEdit.assignedDays || []);
-        setExercises(routineToEdit.exercises);
+        // Asignamos tempId a los ejercicios existentes
+        setExercises(routineToEdit.exercises.map(ex => ({
+          ...ex,
+          tempId: ex.id // Para los existentes, usamos su ID como tempId inicial
+        })));
       } else {
         navigate('/routines');
       }
@@ -48,6 +57,29 @@ export const RoutineEditor: React.FC = () => {
     if (!name.trim()) return alert('El nombre de la rutina es obligatorio');
     setIsSaving(true);
 
+    // Limpiamos los ejercicios para el backend
+    const cleanExercises = exercises.map(ex => {
+      // Si el tempId NO es el ID real (es uno generado en el frontend para un ejercicio nuevo),
+      // enviamos el ID original de la librería.
+      // Si es un ejercicio que ya estaba en la rutina, mantenemos su ID.
+      
+      const cleanSets = ex.sets.map(s => {
+        // Si el ID del set es temporal (generado en el frontend), lo quitamos
+        // para que el backend lo genere.
+        if (s.id.startsWith('set-')) {
+          const { id: _, ...setWithoutId } = s;
+          return setWithoutId;
+        }
+        return s;
+      });
+
+      const { tempId: _, ...exerciseWithoutTempId } = ex;
+      return {
+        ...exerciseWithoutTempId,
+        sets: cleanSets
+      };
+    });
+
     try {
       if (isEditing) {
         await updateRoutine(id!, {
@@ -55,56 +87,83 @@ export const RoutineEditor: React.FC = () => {
           name,
           targetMuscleGroup,
           assignedDays,
-          exercises
+          exercises: cleanExercises as Exercise[]
         });
       } else {
         await addRoutine({
           name,
           targetMuscleGroup,
           assignedDays,
-          exercises
+          exercises: cleanExercises as Exercise[]
         });
       }
       navigate('/routines');
     } catch (error) {
       console.error(error);
-      alert('Ocurrió un error al guardar la rutina');
+      alert('Ocurrió un error al guardar la rutina. Verifica que el backend esté funcionando correctamente.');
       setIsSaving(false);
     }
   };
 
   const handleAddExercise = (exercise: Exercise) => {
-    const newEx = {
+    setExercises([...exercises, {
       ...exercise,
-      id: `ex-${Date.now()}-${Math.random()}`, 
-      sets: [{ id: `set-${Date.now()}`, reps: 0, weight: 0, completed: false }]
-    };
-    setExercises([...exercises, newEx]);
+      tempId: `ex-${Date.now()}`,
+      sets: []
+    }]);
   };
 
-  const handleRemoveExercise = (exId: string) => {
-    setExercises(exercises.filter(ex => ex.id !== exId));
+  const handleRemoveExercise = (tempId: string) => {
+    setExercises(exercises.filter(ex => ex.tempId !== tempId));
   };
 
-  const handleAddSet = (exerciseId: string) => {
+  const handleAddSet = (tempId: string, type: 'reps' | 'time') => {
     setExercises(exercises.map(ex => {
-      if (ex.id === exerciseId) {
+      if (ex.tempId === tempId) {
         return {
           ...ex,
-          sets: [...ex.sets, { id: `set-${Date.now()}-${Math.random()}`, reps: 0, weight: 0, completed: false }]
+          sets: [...ex.sets, { 
+            id: `set-${Date.now()}-${Math.random()}`, 
+            setType: type === 'time' ? 'TIME' : 'REPS',
+            targetRepRange: type === 'reps' ? '' : undefined,
+            targetWeight: type === 'reps' ? 0 : undefined,
+            targetTimeSeconds: type === 'time' ? 0 : undefined,
+            completed: false 
+          }]
         };
       }
       return ex;
     }));
   };
 
-  const handleRemoveSet = (exerciseId: string, setId: string) => {
+  const handleRemoveSet = (tempId: string, setId: string) => {
     setExercises(exercises.map(ex => {
-      if (ex.id === exerciseId) {
+      if (ex.tempId === tempId) {
         return {
           ...ex,
           sets: ex.sets.filter(s => s.id !== setId)
         };
+      }
+      return ex;
+    }));
+  };
+
+  const handleUpdateSetTarget = (tempId: string, setId: string, updates: Partial<import('../types').Set>) => {
+    setExercises(exercises.map(ex => {
+      if (ex.tempId === tempId) {
+        return {
+          ...ex,
+          sets: ex.sets.map(s => s.id === setId ? { ...s, ...updates } : s)
+        };
+      }
+      return ex;
+    }));
+  };
+
+  const handleUpdateRestTime = (tempId: string, restTime: number) => {
+    setExercises(exercises.map(ex => {
+      if (ex.tempId === tempId) {
+        return { ...ex, restTime };
       }
       return ex;
     }));
@@ -201,14 +260,14 @@ export const RoutineEditor: React.FC = () => {
 
             <div className="space-y-4">
               {exercises.map((ex, index) => (
-                <div key={ex.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                <div key={ex.tempId} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                   <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <GripVertical size={16} className="text-slate-400 cursor-move" />
                       <span className="font-bold text-slate-800">{index + 1}. {ex.name}</span>
                     </div>
                     <button 
-                      onClick={() => handleRemoveExercise(ex.id)}
+                      onClick={() => handleRemoveExercise(ex.tempId)}
                       className="text-slate-400 hover:text-red-500 p-1"
                     >
                       <Trash2 size={16} />
@@ -218,11 +277,7 @@ export const RoutineEditor: React.FC = () => {
                     <label className="text-sm font-semibold text-slate-600">Descanso entre sets:</label>
                     <select
                       value={ex.restTime || 0}
-                      onChange={(e) => {
-                        const newExercises = [...exercises];
-                        newExercises[index] = { ...ex, restTime: Number(e.target.value) };
-                        setExercises(newExercises);
-                      }}
+                      onChange={(e) => handleUpdateRestTime(ex.tempId, Number(e.target.value))}
                       className="text-sm border border-slate-200 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value={0}>Sin descanso</option>
@@ -237,23 +292,67 @@ export const RoutineEditor: React.FC = () => {
                     {ex.sets.map((set, sIndex) => (
                       <div key={set.id} className="flex items-center gap-4 text-sm">
                         <span className="font-semibold text-slate-400 w-12">Set {sIndex + 1}</span>
-                        <div className="flex items-center gap-2">
-                           <span className="text-slate-600 bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">Objetivo: Reps/Peso en vivo</span>
+                        <div className="flex flex-1 items-center gap-2">
+                          {set.setType === 'TIME' ? (
+                            <div className="flex items-center gap-2 w-full">
+                              <span className="text-orange-600 text-xs whitespace-nowrap">Obj. Segs:</span>
+                              <input 
+                                type="number" 
+                                min="0" 
+                                value={set.targetTimeSeconds || ''} 
+                                onChange={(e) => handleUpdateSetTarget(ex.tempId, set.id, { targetTimeSeconds: Number(e.target.value) })}
+                                className="flex-1 w-full px-2 py-1 border border-slate-200 rounded-lg text-center outline-none focus:ring-2 focus:ring-orange-500"
+                                placeholder="0"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 w-full">
+                              <span className="text-blue-600 text-xs whitespace-nowrap font-bold">Kg:</span>
+                              <input 
+                                type="number" 
+                                min="0" 
+                                value={set.targetWeight === 0 ? '' : set.targetWeight} 
+                                onChange={(e) => handleUpdateSetTarget(ex.tempId, set.id, { targetWeight: Number(e.target.value) })}
+                                className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-center outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="0"
+                              />
+                              <span className="text-blue-600 text-xs whitespace-nowrap font-bold ml-1">Reps:</span>
+                              <input 
+                                type="text" 
+                                value={set.targetRepRange || ''} 
+                                onChange={(e) => handleUpdateSetTarget(ex.tempId, set.id, { targetRepRange: e.target.value })}
+                                className="w-20 px-2 py-1 border border-slate-200 rounded-lg text-center outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                placeholder="Ej: 8-12"
+                              />
+                            </div>
+                          )}
                         </div>
                         <button 
-                          onClick={() => handleRemoveSet(ex.id, set.id)}
+                          onClick={() => handleRemoveSet(ex.tempId, set.id)}
                           className="ml-auto text-slate-300 hover:text-red-500"
                         >
                           <X size={16} />
                         </button>
                       </div>
                     ))}
-                    <button 
-                      onClick={() => handleAddSet(ex.id)}
-                      className="w-full mt-2 py-2 text-sm font-bold text-blue-500 border border-dashed border-blue-200 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-1"
-                    >
-                      <Plus size={16} /> Añadir Set
-                    </button>
+                    <div className="flex gap-2 mt-2">
+                      {!ex.isTimeBased && (
+                        <button 
+                          onClick={() => handleAddSet(ex.tempId, 'reps')}
+                          className="flex-1 py-2 text-sm font-bold text-blue-500 border border-dashed border-blue-200 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Plus size={16} /> Set (Reps)
+                        </button>
+                      )}
+                      {ex.isTimeBased && (
+                        <button 
+                          onClick={() => handleAddSet(ex.tempId, 'time')}
+                          className="flex-1 py-2 text-sm font-bold text-orange-500 border border-dashed border-orange-200 rounded-xl hover:bg-orange-50 transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Plus size={16} /> Set (Tiempo)
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

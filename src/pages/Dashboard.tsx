@@ -96,7 +96,10 @@ export const Dashboard: React.FC = () => {
               </div>
               <h3 className="text-lg font-bold text-slate-800 mb-2">Día de Descanso</h3>
               <p className="text-slate-500 text-sm mb-6">No tienes ninguna rutina programada para este día.</p>
-              <button className="bg-blue-600 text-white font-medium py-2 px-6 rounded-xl shadow-md shadow-blue-600/30 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 mx-auto">
+              <button 
+                onClick={() => navigate('/routines/new')}
+                className="bg-blue-600 text-white font-medium py-2 px-6 rounded-xl shadow-md shadow-blue-600/30 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 mx-auto"
+              >
                 <Plus size={20} />
                 Crear Rutina
               </button>

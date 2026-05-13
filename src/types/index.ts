@@ -1,7 +1,11 @@
 export interface Set {
   id: string;
-  reps: number;
-  weight: number;
+  setType?: 'REPS' | 'TIME';
+  targetRepRange?: string;
+  targetWeight?: number;
+  targetTimeSeconds?: number;
+  reps?: number;
+  weight?: number;
   completed: boolean;
 }
 
@@ -11,6 +15,12 @@ export interface Exercise {
   muscleGroup: string;
   sets: Set[];
   restTime?: number; // Descanso en segundos
+  isTimeBased?: boolean;
+  feedback?: {
+    jointPain: boolean;
+    possibleInjury: boolean;
+    feelingSick: boolean;
+  };
 }
 
 export interface Routine {

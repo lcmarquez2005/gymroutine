@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkout } from '../hooks/useWorkout';
-import { Check, ChevronLeft, ChevronRight, Dumbbell, Save, Timer, Play, Pause, Square } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Dumbbell, Save, Timer, Play, Pause, Square, MoreVertical } from 'lucide-react';
 
 export const ActiveWorkout: React.FC = () => {
-  const { activeWorkout, updateSet, finishWorkout } = useWorkout();
+  const { activeWorkout, updateSet, finishWorkout, updateExerciseFeedback } = useWorkout();
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timers, setTimers] = useState<Record<number, { timeLeft: number, isTimerRunning: boolean }>>({});
   const [startTime] = useState(Date.now());
+  const [isSaving, setIsSaving] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // Timer Drag Logic
   const [timerOffset, setTimerOffset] = useState({ x: 0, y: 0 });
@@ -93,12 +95,17 @@ export const ActiveWorkout: React.FC = () => {
 
   if (!activeWorkout) return null;
 
-  const handleCompleteWorkout = () => {
-    const session = finishWorkout(startTime);
-    if (session) {
-      navigate('/workout-summary', { state: { session }, replace: true });
-    } else {
-      navigate('/');
+  const handleCompleteWorkout = async () => {
+    setIsSaving(true);
+    try {
+      const session = await finishWorkout(startTime);
+      if (session) {
+        navigate('/workout-summary', { state: { session }, replace: true });
+      } else {
+        navigate('/');
+      }
+    } catch {
+      setIsSaving(false);
     }
   };
 
@@ -229,7 +236,49 @@ export const ActiveWorkout: React.FC = () => {
         {/* Ejercicio Actual (Card Principal) */}
         <div className="flex-1 px-4 pt-4 flex flex-col ">
           <div className="bg-slate-800 rounded-3xl overflow-hidden border border-slate-700 shadow-2xl animate-in slide-in-from-right-8 duration-300" key={currentExercise.id}>
-            <div className="bg-slate-800 px-6 py-6 border-b border-slate-700 flex flex-col items-center gap-3 text-center">
+            <div className="bg-slate-800 px-6 py-6 border-b border-slate-700 flex flex-col items-center gap-3 text-center relative">
+              <button 
+                onClick={() => setOpenMenuId(openMenuId === currentExercise.id ? null : currentExercise.id)}
+                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-700 transition-colors"
+              >
+                <MoreVertical size={20} />
+              </button>
+              
+              {openMenuId === currentExercise.id && (
+                <div className="absolute top-14 right-4 bg-slate-800 border border-slate-700 shadow-2xl rounded-2xl p-4 w-64 z-20 animate-in fade-in zoom-in-95 duration-200">
+                  <h4 className="text-sm font-bold text-slate-300 mb-3 text-left">Reporte de Bienestar</h4>
+                  <div className="space-y-3 text-left">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={currentExercise.feedback?.jointPain || false}
+                        onChange={(e) => updateExerciseFeedback(currentIndex, { jointPain: e.target.checked })}
+                        className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-red-500 focus:ring-red-500 focus:ring-offset-slate-800"
+                      />
+                      <span className="text-slate-300 text-sm">Dolor articular</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={currentExercise.feedback?.possibleInjury || false}
+                        onChange={(e) => updateExerciseFeedback(currentIndex, { possibleInjury: e.target.checked })}
+                        className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-orange-500 focus:ring-orange-500 focus:ring-offset-slate-800"
+                      />
+                      <span className="text-slate-300 text-sm">Posible lesión</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={currentExercise.feedback?.feelingSick || false}
+                        onChange={(e) => updateExerciseFeedback(currentIndex, { feelingSick: e.target.checked })}
+                        className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-slate-800"
+                      />
+                      <span className="text-slate-300 text-sm">Me siento enfermo</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-blue-600/20 text-blue-400 p-4 rounded-full mb-2">
                 <Dumbbell size={32} />
               </div>
@@ -242,7 +291,7 @@ export const ActiveWorkout: React.FC = () => {
               <div className="grid grid-cols-4 gap-2 px-2 text-xs font-semibold text-slate-400 text-center uppercase tracking-wider mb-2">
                 <div>Set</div>
                 <div>Kg</div>
-                <div>Reps</div>
+                <div>Reps/Segs</div>
                 <div>Ok</div>
               </div>
 
@@ -257,24 +306,41 @@ export const ActiveWorkout: React.FC = () => {
                     {sIndex + 1}
                   </div>
                   <div>
-                    <input
-                      type="number"
-                      min="0"
-                      value={set.weight === 0 ? '' : set.weight}
-                      onChange={(e) => updateSet(currentIndex, sIndex, { weight: Number(e.target.value) })}
-                      placeholder="0"
-                      className="w-full bg-slate-800 border border-slate-600 rounded-xl py-2 px-1 text-center text-white font-bold text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder-slate-600 transition-all"
-                    />
+                    {/* Peso Input */}
+                    <div className="px-1">
+                      {set.setType === 'TIME' ? (
+                        <div className="w-full bg-slate-800 border border-slate-700 rounded-xl py-2 px-1 text-center text-slate-500 font-bold text-lg cursor-not-allowed">
+                          -
+                        </div>
+                      ) : (
+                        <input 
+                          type="number"
+                          min="0"
+                          value={set.weight === undefined ? '' : set.weight}
+                          onChange={(e) => updateSet(currentIndex, sIndex, { weight: Number(e.target.value) })}
+                          disabled={set.completed}
+                          className="w-full bg-slate-800 border border-slate-600 rounded-xl py-2 px-1 text-center text-white font-bold text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder-slate-600 transition-all disabled:opacity-50"
+                          placeholder={set.targetWeight ? String(set.targetWeight) : "0"}
+                        />
+                      )}
+                    </div>
                   </div>
                   <div>
-                    <input
-                      type="number"
-                      min="0"
-                      value={set.reps === 0 ? '' : set.reps}
-                      onChange={(e) => updateSet(currentIndex, sIndex, { reps: Number(e.target.value) })}
-                      placeholder="0"
-                      className="w-full bg-slate-800 border border-slate-600 rounded-xl py-2 px-1 text-center text-white font-bold text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder-slate-600 transition-all"
-                    />
+                    {/* Reps Input */}
+                    <div className="px-1 relative">
+                      <input 
+                        type="number"
+                        min="0"
+                        value={set.reps === undefined ? '' : set.reps}
+                        onChange={(e) => updateSet(currentIndex, sIndex, { reps: Number(e.target.value) })}
+                        disabled={set.completed}
+                        className={`w-full bg-slate-800 border rounded-xl py-2 px-1 text-center text-white font-bold text-lg outline-none placeholder-slate-500 transition-all disabled:opacity-50 ${set.setType === 'TIME' ? 'border-orange-500/50 focus:ring-2 focus:ring-orange-500' : 'border-slate-600 focus:ring-2 focus:ring-blue-500'}`}
+                        placeholder={set.setType === 'TIME' ? (set.targetTimeSeconds ? String(set.targetTimeSeconds) : "0") : (set.targetRepRange || "0")}
+                      />
+                      {set.setType === 'TIME' && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-orange-500 uppercase tracking-wider">Segs</span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex justify-center">
                     <button
@@ -308,10 +374,20 @@ export const ActiveWorkout: React.FC = () => {
             {isLastExercise ? (
               <button
                 onClick={handleCompleteWorkout}
-                className="flex-[2] bg-green-600 hover:bg-green-500 text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-green-600/30 flex items-center justify-center gap-2 transition-colors"
+                disabled={isSaving}
+                className="flex-[2] bg-green-600 hover:bg-green-500 text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-green-600/30 flex items-center justify-center gap-2 transition-colors disabled:opacity-70"
               >
-                <Save size={24} />
-                Finalizar
+                {isSaving ? (
+                  <>
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save size={24} />
+                    Finalizar
+                  </>
+                )}
               </button>
             ) : (
               <button

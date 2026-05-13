@@ -20,4 +20,7 @@ export const exerciseService = {
       restTime: response.data.restTime || 0,
     };
   },
+  deleteExercise: async (id: string): Promise<void> => {
+    await api.delete(`/exercises/${id}`);
+  }
 };

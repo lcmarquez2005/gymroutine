@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useWorkout } from '../hooks/useWorkout';
 import type { Exercise } from '../types';
-import { X, Plus, Search } from 'lucide-react';
+import { X, Plus, Search, Trash2 } from 'lucide-react';
 
 interface ExerciseSelectorModalProps {
   isOpen: boolean;
@@ -10,11 +10,12 @@ interface ExerciseSelectorModalProps {
 }
 
 export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ isOpen, onClose, onSelect }) => {
-  const { exerciseLibrary, addExerciseToLibrary } = useWorkout();
+  const { exerciseLibrary, addExerciseToLibrary, deleteExerciseFromLibrary } = useWorkout();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [newExName, setNewExName] = useState('');
   const [newExMuscle, setNewExMuscle] = useState('pecho');
+  const [isTimeBased, setIsTimeBased] = useState(false);
 
   if (!isOpen) return null;
 
@@ -22,19 +23,22 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
     ex.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (newExName.trim()) {
-      const newEx: Exercise = {
-        id: `ex-${Date.now()}`,
-        name: newExName,
-        muscleGroup: newExMuscle,
-        sets: []
-      };
-      addExerciseToLibrary(newEx);
-      onSelect(newEx);
-      setNewExName('');
-      setIsCreating(false);
-      onClose();
+      try {
+        const newEx = await addExerciseToLibrary({
+          name: newExName,
+          muscleGroup: newExMuscle,
+          isTimeBased
+        } as any);
+        onSelect(newEx);
+        setNewExName('');
+        setIsTimeBased(false);
+        setIsCreating(false);
+        onClose();
+      } catch (error) {
+        alert('Error al crear el ejercicio');
+      }
     }
   };
 
@@ -73,7 +77,20 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
                       <p className="font-semibold text-slate-800">{ex.name}</p>
                       <p className="text-xs text-slate-500 capitalize">{ex.muscleGroup}</p>
                     </div>
-                    <Plus size={18} className="text-blue-500" />
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm('¿Seguro que deseas eliminar este ejercicio?')) {
+                            deleteExerciseFromLibrary(ex.id).catch(() => alert('Error al eliminar'));
+                          }
+                        }}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <Plus size={18} className="text-blue-500" />
+                    </div>
                   </div>
                 ))}
                 {filteredExercises.length === 0 && (
@@ -115,6 +132,17 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
                   <option value="hombros">Hombros</option>
                   <option value="core">Core</option>
                 </select>
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isTimeBased}
+                    onChange={(e) => setIsTimeBased(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                  />
+                  Es un ejercicio por tiempo (ej. Planchas)
+                </label>
               </div>
               <div className="flex gap-2 pt-2">
                 <button 
