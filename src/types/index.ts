@@ -21,6 +21,45 @@ export interface Exercise {
     possibleInjury: boolean;
     feelingSick: boolean;
   };
+  
+  // New backend ExerciseDTO fields
+  nameEn?: string;
+  nameDe?: string;
+  nameEs?: string;
+  descriptionEn?: string;
+  descriptionDe?: string;
+  descriptionEs?: string;
+  category?: string;
+  forceType?: string;
+  mechanic?: string;
+  difficulty?: string;
+  equipment?: string;
+  bodyPart?: string;
+  primaryMuscles?: string;
+  secondaryMuscles?: string;
+  goals?: string;
+  tags?: string;
+  isUnilateral?: boolean;
+  isBodyweight?: boolean;
+  instructionsEn?: string;
+  instructionsDe?: string;
+  instructionsEs?: string;
+  tipsEn?: string;
+  tipsDe?: string;
+  tipsEs?: string;
+  met?: number;
+  imageStart?: string;
+  imagePeak?: string;
+  imageMain?: string;
+  images?: {
+    flat?: {
+      start?: string;
+      peak?: string;
+      main?: string;
+    };
+  };
+  customVideoUrl?: string | null;
+  customImageUrl?: string | null;
 }
 
 export interface Routine {

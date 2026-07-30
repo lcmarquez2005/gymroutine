@@ -11,6 +11,7 @@ import { ActiveWorkout } from './pages/ActiveWorkout';
 import { RoutinesManager } from './pages/RoutinesManager';
 import { RoutineEditor } from './pages/RoutineEditor';
 import { WorkoutSummary } from './pages/WorkoutSummary';
+import { ExerciseLibrary } from './pages/ExerciseLibrary';
 import './index.css';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/routines" element={<RoutinesManager />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/exercises" element={<ExerciseLibrary />} />
             <Route path="/workout/:routineId" element={<ActiveWorkout />} />
             <Route path="/workout-summary" element={<WorkoutSummary />} />
             <Route path="/routines/new" element={<RoutineEditor />} />

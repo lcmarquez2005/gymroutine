@@ -19,7 +19,8 @@ interface WorkoutContextType {
   addRoutine: (routine: Omit<Routine, 'id'>) => Promise<void>;
   updateRoutine: (id: string, routine: Routine) => Promise<void>;
   deleteRoutine: (id: string) => Promise<void>;
-  addExerciseToLibrary: (exercise: { name: string; muscleGroup: string; isTimeBased?: boolean }) => Promise<Exercise>;
+  addExerciseToLibrary: (exercise: Partial<Exercise>) => Promise<Exercise>;
+  updateExerciseInLibrary: (id: string, exercise: Partial<Exercise>) => Promise<Exercise>;
   deleteExerciseFromLibrary: (id: string) => Promise<void>;
 }
 
@@ -120,11 +121,26 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     setRoutines(prev => prev.filter(r => r.id !== id));
   };
 
-  const addExerciseToLibrary = async (exercise: { name: string; muscleGroup: string; isTimeBased?: boolean }) => {
-    const newExercise = await exerciseService.createExercise(exercise);
-    const mergedExercise = { ...newExercise, isTimeBased: exercise.isTimeBased };
-    setExerciseLibrary(prev => [...prev, mergedExercise]);
-    return mergedExercise;
+  const addExerciseToLibrary = async (exercise: Partial<Exercise>) => {
+    const payload = {
+      ...exercise,
+      nameEs: exercise.nameEs || exercise.name,
+      bodyPart: exercise.bodyPart || exercise.muscleGroup,
+    };
+    const newExercise = await exerciseService.createExercise(payload);
+    setExerciseLibrary(prev => [...prev, newExercise]);
+    return newExercise;
+  };
+
+  const updateExerciseInLibrary = async (id: string, updatedData: Partial<Exercise>) => {
+    const payload = {
+      ...updatedData,
+      nameEs: updatedData.nameEs || updatedData.name,
+      bodyPart: updatedData.bodyPart || updatedData.muscleGroup,
+    };
+    const newExercise = await exerciseService.updateExercise(id, payload);
+    setExerciseLibrary(prev => prev.map(ex => ex.id === id ? newExercise : ex));
+    return newExercise;
   };
 
   const deleteExerciseFromLibrary = async (id: string) => {
@@ -265,12 +281,10 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       updateRoutine,
       deleteRoutine,
       addExerciseToLibrary,
+      updateExerciseInLibrary,
       deleteExerciseFromLibrary
     }}>
       {children}
     </WorkoutContext.Provider>
   );
 };
-
-
-

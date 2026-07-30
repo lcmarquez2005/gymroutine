@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkout } from '../hooks/useWorkout';
-import { Check, ChevronLeft, ChevronRight, Dumbbell, Save, Timer, Play, Pause, Square, MoreVertical } from 'lucide-react';
+import type { Exercise } from '../types';
+import { Check, ChevronLeft, ChevronRight, Dumbbell, Save, Timer, Play, Pause, Square, MoreVertical, Plus, Minus } from 'lucide-react';
 
 export const ActiveWorkout: React.FC = () => {
   const { activeWorkout, updateSet, finishWorkout, updateExerciseFeedback } = useWorkout();
@@ -11,6 +12,77 @@ export const ActiveWorkout: React.FC = () => {
   const [startTime] = useState(Date.now());
   const [isSaving, setIsSaving] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    setIsHovered(false);
+  }, [currentIndex]);
+
+  const getMediaUrl = (path: string | null | undefined) => {
+    if (!path) return '';
+    
+    let cleanPath = path;
+    if (path.includes('images/')) {
+      const parts = path.split('images/');
+      try {
+        const decoded = decodeURIComponent(parts[1]);
+        const sanitized = decoded.toLowerCase()
+                                 .replace(/\s+/g, '-')
+                                 .replace(/_/g, '-')
+                                 .replace(/[^a-z0-9\.\/-]/g, '');
+        cleanPath = `${parts[0]}images/${sanitized}`;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+      return cleanPath;
+    }
+    
+    const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8081';
+    const finalPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+    return `${baseUrl}${finalPath}`;
+  };
+
+  const getExerciseImages = (ex: Exercise) => {
+    if (ex.customImageUrl) {
+      return {
+        start: ex.customImageUrl,
+        peak: ex.customImageUrl,
+        isAnimated: false
+      };
+    }
+
+    const flat = ex.images?.flat || {};
+    
+    let start = ex.imageStart || flat.start || '';
+    let peak = ex.imagePeak || flat.peak || '';
+    let main = ex.imageMain || flat.main || '';
+
+    const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+    if (!start && !peak && !main && ex.id && !isUUID(ex.id)) {
+      const idLower = ex.id.toLowerCase();
+      const isStatic = idLower.includes('bike') || idLower.includes('plank') || idLower.includes('stretch') || idLower.includes('run') || idLower.includes('walk') || idLower.includes('hold') || idLower.includes('rope');
+      if (isStatic) {
+        main = `images/flat/${ex.id}-main.webp`;
+      } else {
+        start = `images/flat/${ex.id}-start.webp`;
+        peak = `images/flat/${ex.id}-peak.webp`;
+      }
+    }
+
+    const startUrl = start || main || peak;
+    const peakUrl = peak || main || start;
+    const hasStartAndPeak = Boolean(start && peak && start !== peak);
+
+    return {
+      start: startUrl,
+      peak: peakUrl,
+      isAnimated: hasStartAndPeak
+    };
+  };
 
   // Timer Drag Logic
   const [timerOffset, setTimerOffset] = useState({ x: 0, y: 0 });
@@ -279,16 +351,50 @@ export const ActiveWorkout: React.FC = () => {
                 </div>
               )}
 
-              <div className="bg-blue-600/20 text-blue-400 p-4 rounded-full mb-2">
-                <Dumbbell size={32} />
-              </div>
+              {/* Image Container with Hover to Toggle Stage */}
+              {(() => {
+                const images = getExerciseImages(currentExercise);
+                const hasImage = Boolean(images.start);
+                // Si está en hover (o toque en móvil) y es animado, muestra la segunda imagen (peak). De lo contrario, la primera (start).
+                const imageToShow = (images.isAnimated && isHovered) ? images.peak : images.start;
+                
+                return (
+                  <div 
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    onTouchStart={() => setIsHovered(true)}
+                    onTouchEnd={() => setIsHovered(false)}
+                    className={`relative w-44 h-44 bg-slate-900 rounded-3xl border border-slate-700/60 shadow-inner flex items-center justify-center overflow-hidden select-none mb-4 transition-all duration-300 ${
+                      images.isAnimated && isHovered ? 'ring-2 ring-blue-500 border-transparent shadow-[0_0_20px_rgba(59,130,246,0.2)] scale-[1.02]' : ''
+                    }`}
+                  >
+                    {hasImage ? (
+                      <>
+                        <img 
+                          src={getMediaUrl(imageToShow)} 
+                          alt={currentExercise.name} 
+                          className="w-full h-full object-cover transition-all duration-300"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <div className="text-slate-500 flex flex-col items-center gap-2">
+                        <Dumbbell size={36} className="opacity-40" />
+                        <span className="text-[10px] opacity-40">Sin imagen</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <h2 className="text-2xl font-bold text-white">{currentExercise.name}</h2>
               <p className="text-slate-400 text-sm capitalize">{currentExercise.muscleGroup}</p>
             </div>
 
             <div className="p-6 space-y-4">
               {/* Cabeceras de columnas */}
-              <div className="grid grid-cols-4 gap-2 px-2 text-xs font-semibold text-slate-400 text-center uppercase tracking-wider mb-2">
+              <div className="grid grid-cols-[30px_1.2fr_1.2fr_48px] gap-2 px-2 text-xs font-semibold text-slate-400 text-center uppercase tracking-wider mb-2">
                 <div>Set</div>
                 <div>Kg</div>
                 <div>Reps/Segs</div>
@@ -299,7 +405,7 @@ export const ActiveWorkout: React.FC = () => {
               {currentExercise.sets.map((set, sIndex) => (
                 <div
                   key={set.id}
-                  className={`grid grid-cols-4 gap-2 items-center p-2 rounded-2xl transition-all duration-300 ${set.completed ? 'bg-green-500/10 border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'bg-slate-900/60 border border-slate-700/50'
+                  className={`grid grid-cols-[30px_1.2fr_1.2fr_48px] gap-2 items-center p-2 rounded-2xl transition-all duration-300 ${set.completed ? 'bg-green-500/10 border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'bg-slate-900/60 border border-slate-700/50'
                     }`}
                 >
                   <div className="text-center font-bold text-slate-300 text-lg">
@@ -309,36 +415,93 @@ export const ActiveWorkout: React.FC = () => {
                     {/* Peso Input */}
                     <div className="px-1">
                       {set.setType === 'TIME' ? (
-                        <div className="w-full bg-slate-800 border border-slate-700 rounded-xl py-2 px-1 text-center text-slate-500 font-bold text-lg cursor-not-allowed">
+                        <div className="w-full h-11 bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-slate-500 font-bold text-lg cursor-not-allowed">
                           -
                         </div>
                       ) : (
-                        <input 
-                          type="number"
-                          min="0"
-                          value={set.weight === undefined ? '' : set.weight}
-                          onChange={(e) => updateSet(currentIndex, sIndex, { weight: Number(e.target.value) })}
-                          disabled={set.completed}
-                          className="w-full bg-slate-800 border border-slate-600 rounded-xl py-2 px-1 text-center text-white font-bold text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder-slate-600 transition-all disabled:opacity-50"
-                          placeholder={set.targetWeight ? String(set.targetWeight) : "0"}
-                        />
+                        <div className="flex items-center justify-between bg-slate-900 border border-slate-700/80 rounded-2xl p-1 gap-1 focus-within:ring-2 focus-within:ring-blue-500 h-11">
+                          <button
+                            type="button"
+                            disabled={set.completed}
+                            onClick={() => {
+                              const currentVal = set.weight !== undefined ? set.weight : (set.targetWeight || 0);
+                              updateSet(currentIndex, sIndex, { weight: Math.max(0, currentVal - 2.5) });
+                            }}
+                            className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-90 text-slate-300 transition-all flex items-center justify-center disabled:opacity-40 flex-shrink-0"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <input 
+                            type="number"
+                            min="0"
+                            step="2.5"
+                            value={set.weight === undefined ? '' : set.weight}
+                            onChange={(e) => updateSet(currentIndex, sIndex, { weight: Number(e.target.value) })}
+                            disabled={set.completed}
+                            readOnly
+                            className="w-full bg-transparent border-none text-center text-white font-bold text-m outline-none py-1 min-w-0 pointer-events-none"
+                            placeholder={set.targetWeight ? String(set.targetWeight) : "0"}
+                          />
+                          <button
+                            type="button"
+                            disabled={set.completed}
+                            onClick={() => {
+                              const currentVal = set.weight !== undefined ? set.weight : (set.targetWeight || 0);
+                              updateSet(currentIndex, sIndex, { weight: currentVal + 2.5 });
+                            }}
+                            className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-90 text-slate-300 transition-all flex items-center justify-center disabled:opacity-40 flex-shrink-0"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
                   <div>
                     {/* Reps Input */}
                     <div className="px-1 relative">
-                      <input 
-                        type="number"
-                        min="0"
-                        value={set.reps === undefined ? '' : set.reps}
-                        onChange={(e) => updateSet(currentIndex, sIndex, { reps: Number(e.target.value) })}
-                        disabled={set.completed}
-                        className={`w-full bg-slate-800 border rounded-xl py-2 px-1 text-center text-white font-bold text-lg outline-none placeholder-slate-500 transition-all disabled:opacity-50 ${set.setType === 'TIME' ? 'border-orange-500/50 focus:ring-2 focus:ring-orange-500' : 'border-slate-600 focus:ring-2 focus:ring-blue-500'}`}
-                        placeholder={set.setType === 'TIME' ? (set.targetTimeSeconds ? String(set.targetTimeSeconds) : "0") : (set.targetRepRange || "0")}
-                      />
+                      <div className={`flex items-center justify-between bg-slate-900 border rounded-2xl p-1 gap-1 focus-within:ring-2 h-11 ${
+                        set.setType === 'TIME' 
+                          ? 'border-orange-500/50 focus-within:ring-orange-500' 
+                          : 'border-slate-700/80 focus-within:ring-blue-500'
+                      }`}>
+                        <button
+                          type="button"
+                          disabled={set.completed}
+                          onClick={() => {
+                            const currentVal = set.reps !== undefined ? set.reps : (set.setType === 'TIME' ? (set.targetTimeSeconds || 0) : Number(set.targetRepRange || 0));
+                            const step = set.setType === 'TIME' ? 5 : 1;
+                            updateSet(currentIndex, sIndex, { reps: Math.max(0, currentVal - step) });
+                          }}
+                          className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-90 text-slate-300 transition-all flex items-center justify-center disabled:opacity-40 flex-shrink-0"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <input 
+                          type="number"
+                          min="0"
+                          value={set.reps === undefined ? '' : set.reps}
+                          onChange={(e) => updateSet(currentIndex, sIndex, { reps: Number(e.target.value) })}
+                          disabled={set.completed}
+                          readOnly
+                          className="w-full bg-transparent border-none text-center text-white font-bold text-m outline-none py-1 min-w-0 pointer-events-none"
+                          placeholder={set.setType === 'TIME' ? (set.targetTimeSeconds ? String(set.targetTimeSeconds) : "0") : (set.targetRepRange || "0")}
+                        />
+                        <button
+                          type="button"
+                          disabled={set.completed}
+                          onClick={() => {
+                            const currentVal = set.reps !== undefined ? set.reps : (set.setType === 'TIME' ? (set.targetTimeSeconds || 0) : Number(set.targetRepRange || 0));
+                            const step = set.setType === 'TIME' ? 5 : 1;
+                            updateSet(currentIndex, sIndex, { reps: currentVal + step });
+                          }}
+                          className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-90 text-slate-300 transition-all flex items-center justify-center disabled:opacity-40 flex-shrink-0"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
                       {set.setType === 'TIME' && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-orange-500 uppercase tracking-wider">Segs</span>
+                        <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[8px] font-bold text-orange-500 uppercase tracking-wider pointer-events-none opacity-60">s</span>
                       )}
                     </div>
                   </div>

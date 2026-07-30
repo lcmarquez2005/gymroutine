@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useWorkout } from '../hooks/useWorkout';
 import type { Exercise } from '../types';
-import { X, Plus, Search, Trash2 } from 'lucide-react';
+import { X, Plus, Search, Trash2, Dumbbell } from 'lucide-react';
 
 interface ExerciseSelectorModalProps {
   isOpen: boolean;
@@ -19,8 +19,78 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
 
   if (!isOpen) return null;
 
+  const getMediaUrl = (path: string | null | undefined) => {
+    if (!path) return '';
+    
+    let cleanPath = path;
+    if (path.includes('images/')) {
+      const parts = path.split('images/');
+      try {
+        const decoded = decodeURIComponent(parts[1]);
+        const sanitized = decoded.toLowerCase()
+                                 .replace(/\s+/g, '-')
+                                 .replace(/_/g, '-')
+                                 .replace(/[^a-z0-9\.\/-]/g, '');
+        cleanPath = `${parts[0]}images/${sanitized}`;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+      return cleanPath;
+    }
+    
+    const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8081';
+    const finalPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+    return `${baseUrl}${finalPath}`;
+  };
+
+  // Helper para resolver las imágenes de un ejercicio con fallbacks
+  const getExerciseImages = (ex: Exercise) => {
+    if (ex.customImageUrl) {
+      return {
+        start: ex.customImageUrl,
+        peak: ex.customImageUrl,
+        isAnimated: false
+      };
+    }
+
+    const flat = ex.images?.flat || {};
+    
+    // Buscar propiedades planas primero, luego propiedades anidadas
+    let start = ex.imageStart || flat.start || '';
+    let peak = ex.imagePeak || flat.peak || '';
+    let main = ex.imageMain || flat.main || '';
+
+    // Si está todo vacío y es un ejercicio del catálogo por defecto (no UUID), creamos fallback del ID
+    const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+    if (!start && !peak && !main && ex.id && !isUUID(ex.id)) {
+      const idLower = ex.id.toLowerCase();
+      // Detectamos si es un ejercicio conocido por ser estático o continuo
+      const isStatic = idLower.includes('bike') || idLower.includes('plank') || idLower.includes('stretch') || idLower.includes('run') || idLower.includes('walk') || idLower.includes('hold') || idLower.includes('rope');
+      if (isStatic) {
+        main = `images/flat/${ex.id}-main.webp`;
+      } else {
+        start = `images/flat/${ex.id}-start.webp`;
+        peak = `images/flat/${ex.id}-peak.webp`;
+      }
+    }
+
+    const startUrl = start || main || peak;
+    const peakUrl = peak || main || start;
+    const hasStartAndPeak = Boolean(start && peak && start !== peak);
+
+    return {
+      start: startUrl,
+      peak: peakUrl,
+      isAnimated: hasStartAndPeak
+    };
+  };
+
   const filteredExercises = exerciseLibrary.filter(ex => 
-    ex.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ex.nameEs?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleCreate = async () => {
@@ -67,32 +137,57 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
               </div>
 
               <div className="max-h-60 overflow-y-auto space-y-2 mb-4">
-                {filteredExercises.map(ex => (
-                  <div 
-                    key={ex.id} 
-                    onClick={() => { onSelect(ex); onClose(); }}
-                    className="p-3 border border-slate-100 rounded-xl hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition-colors flex justify-between items-center"
-                  >
-                    <div>
-                      <p className="font-semibold text-slate-800">{ex.name}</p>
-                      <p className="text-xs text-slate-500 capitalize">{ex.muscleGroup}</p>
+                {filteredExercises.map(ex => {
+                  const images = getExerciseImages(ex);
+                  const imageToShow = images.start;
+                  const hasImage = Boolean(imageToShow);
+                  
+                  return (
+                    <div 
+                      key={ex.id} 
+                      onClick={() => { onSelect(ex); onClose(); }}
+                      className="p-2 border border-slate-100 rounded-xl hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition-colors flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Thumbnail */}
+                        <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center border border-slate-100">
+                          {hasImage ? (
+                            <img 
+                              src={getMediaUrl(imageToShow)} 
+                              alt={ex.name} 
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <Dumbbell size={16} className="text-slate-400 opacity-60" />
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-800 text-sm truncate">{ex.nameEs || ex.name}</p>
+                          <p className="text-[10px] text-slate-500 capitalize truncate">{ex.muscleGroup || ex.bodyPart}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('¿Seguro que deseas eliminar este ejercicio?')) {
+                              deleteExerciseFromLibrary(ex.id).catch(() => alert('Error al eliminar'));
+                            }
+                          }}
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <Plus size={16} className="text-blue-500 mr-1" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (window.confirm('¿Seguro que deseas eliminar este ejercicio?')) {
-                            deleteExerciseFromLibrary(ex.id).catch(() => alert('Error al eliminar'));
-                          }
-                        }}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                      <Plus size={18} className="text-blue-500" />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {filteredExercises.length === 0 && (
                   <p className="text-center text-slate-500 py-4 text-sm">No se encontraron ejercicios.</p>
                 )}

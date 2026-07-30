@@ -12,7 +12,7 @@ export const exerciseService = {
     }));
   },
 
-  createExercise: async (data: { name: string; muscleGroup: string }): Promise<Exercise> => {
+  createExercise: async (data: Partial<Exercise>): Promise<Exercise> => {
     const response = await api.post<Exercise>('/exercises', data);
     return {
       ...response.data,
@@ -20,7 +20,18 @@ export const exerciseService = {
       restTime: response.data.restTime || 0,
     };
   },
+
+  updateExercise: async (id: string, data: Partial<Exercise>): Promise<Exercise> => {
+    const response = await api.put<Exercise>(`/exercises/${id}`, data);
+    return {
+      ...response.data,
+      sets: response.data.sets || [],
+      restTime: response.data.restTime || 0,
+    };
+  },
+
   deleteExercise: async (id: string): Promise<void> => {
     await api.delete(`/exercises/${id}`);
   }
 };
+
