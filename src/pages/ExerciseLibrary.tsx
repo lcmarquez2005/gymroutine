@@ -51,7 +51,8 @@ export const ExerciseLibrary: React.FC = () => {
     { key: 'hombros', label: 'Hombros' },
     { key: 'biceps', label: 'Bíceps' },
     { key: 'triceps', label: 'Tríceps' },
-    { key: 'core', label: 'Core' }
+    { key: 'core', label: 'Core' },
+    { key: 'fullbody', label: 'Full Body' }
   ];
 
   const difficulties = [
@@ -142,9 +143,26 @@ export const ExerciseLibrary: React.FC = () => {
         ex.primaryMuscles?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const exerciseMuscle = (ex.muscleGroup || ex.bodyPart || '').toLowerCase();
-      const matchesMuscle = selectedMuscle === 'all' || 
-        exerciseMuscle === selectedMuscle.toLowerCase() || 
-        (selectedMuscle === 'core' && exerciseMuscle === 'abs');
+      let matchesMuscle = selectedMuscle === 'all';
+      if (!matchesMuscle) {
+        if (selectedMuscle === 'pecho') {
+          matchesMuscle = exerciseMuscle === 'chest' || exerciseMuscle === 'pecho';
+        } else if (selectedMuscle === 'espalda') {
+          matchesMuscle = exerciseMuscle === 'back' || exerciseMuscle === 'espalda';
+        } else if (selectedMuscle === 'piernas') {
+          matchesMuscle = exerciseMuscle === 'legs' || exerciseMuscle === 'piernas' || exerciseMuscle.includes('legs') || exerciseMuscle === 'upper legs' || exerciseMuscle === 'lower legs';
+        } else if (selectedMuscle === 'hombros') {
+          matchesMuscle = exerciseMuscle === 'shoulders' || exerciseMuscle === 'hombros';
+        } else if (selectedMuscle === 'biceps') {
+          matchesMuscle = exerciseMuscle === 'biceps' || (exerciseMuscle.includes('arms') && Boolean(ex.primaryMuscles?.toLowerCase().includes('biceps')));
+        } else if (selectedMuscle === 'triceps') {
+          matchesMuscle = exerciseMuscle === 'triceps' || (exerciseMuscle.includes('arms') && Boolean(ex.primaryMuscles?.toLowerCase().includes('triceps')));
+        } else if (selectedMuscle === 'core') {
+          matchesMuscle = exerciseMuscle === 'core' || exerciseMuscle === 'abs' || exerciseMuscle === 'waist' || exerciseMuscle === 'abdominales';
+        } else if (selectedMuscle === 'fullbody') {
+          matchesMuscle = exerciseMuscle === 'full_body' || exerciseMuscle === 'fullbody' || exerciseMuscle === 'full body' || exerciseMuscle === 'cardio';
+        }
+      }
 
       const matchesDifficulty = selectedDifficulty === 'all' || 
         ex.difficulty?.toLowerCase() === selectedDifficulty.toLowerCase();
@@ -152,6 +170,22 @@ export const ExerciseLibrary: React.FC = () => {
       return matchesSearch && matchesMuscle && matchesDifficulty;
     });
   }, [exerciseLibrary, searchTerm, selectedMuscle, selectedDifficulty]);
+
+  // Límite de ejercicios visibles para evitar scroll infinito inicial
+  const [visibleLimit, setVisibleLimit] = useState(10);
+
+  // Reiniciar el límite al buscar o filtrar
+  React.useEffect(() => {
+    setVisibleLimit(10);
+  }, [searchTerm, selectedMuscle, selectedDifficulty]);
+
+  // Ejercicios finales a renderizar
+  const exercisesToShow = useMemo(() => {
+    if (searchTerm.trim() !== '') {
+      return filteredExercises;
+    }
+    return filteredExercises.slice(0, visibleLimit);
+  }, [filteredExercises, searchTerm, visibleLimit]);
 
   // Manejar edición
   const handleOpenEdit = (ex: Exercise, e: React.MouseEvent) => {
@@ -262,10 +296,10 @@ export const ExerciseLibrary: React.FC = () => {
 
   const getDifficultyColor = (diff: string | undefined) => {
     switch (diff?.toLowerCase()) {
-      case 'beginner': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'intermediate': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'advanced': return 'bg-rose-100 text-rose-800 border-rose-200';
-      default: return 'bg-slate-100 text-slate-700 border-slate-200';
+      case 'beginner': return 'bg-emerald-950/40 text-emerald-400 border-emerald-900/30';
+      case 'intermediate': return 'bg-amber-950/40 text-amber-400 border-amber-900/30';
+      case 'advanced': return 'bg-rose-950/40 text-rose-400 border-rose-900/30';
+      default: return 'bg-slate-800 text-slate-400 border-slate-700';
     }
   };
 
@@ -279,9 +313,9 @@ export const ExerciseLibrary: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-slate-50 min-h-screen pb-24">
+    <div className="w-full bg-slate-900 min-h-screen pb-24 text-slate-100">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 pt-8 pb-8 text-white rounded-b-[2rem] shadow-lg">
+      <div className="bg-slate-950 border-b border-slate-800 px-6 pt-8 pb-8 text-white rounded-b-3xl shadow-xl">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -309,7 +343,7 @@ export const ExerciseLibrary: React.FC = () => {
             placeholder="Buscar por nombre, músculo o técnica..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-white text-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-blue-400 outline-none transition-all shadow-md placeholder-slate-400 font-medium"
+            className="w-full pl-11 pr-4 py-3 bg-slate-800 text-slate-100 border border-slate-700/60 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-inner placeholder-slate-500 font-medium"
           />
         </div>
       </div>
@@ -325,7 +359,7 @@ export const ExerciseLibrary: React.FC = () => {
               className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all ${
                 selectedMuscle === filter.key
                   ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600 hover:text-slate-200'
               }`}
             >
               {filter.label}
@@ -338,7 +372,7 @@ export const ExerciseLibrary: React.FC = () => {
           <select
             value={selectedDifficulty}
             onChange={(e) => setSelectedDifficulty(e.target.value)}
-            className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 bg-slate-800 border border-slate-700 text-slate-300 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
           >
             {difficulties.map(d => (
               <option key={d.key} value={d.key}>{d.label}</option>
@@ -353,98 +387,112 @@ export const ExerciseLibrary: React.FC = () => {
       {/* Grid de Ejercicios */}
       <div className="px-6 mt-4 space-y-4">
         {filteredExercises.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4">
-            {filteredExercises.map(ex => {
-              const images = getExerciseImages(ex);
-              const imageToShow = images.start;
-              const hasImage = Boolean(imageToShow);
-              
-              return (
-                <div 
-                  key={ex.id}
-                  onClick={() => { setSelectedExercise(ex); setActiveTab('instructions'); }}
-                  className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-blue-100 transition-all cursor-pointer flex"
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              {exercisesToShow.map(ex => {
+                const images = getExerciseImages(ex);
+                const imageToShow = images.start;
+                const hasImage = Boolean(imageToShow);
+                
+                return (
+                  <div 
+                    key={ex.id}
+                    onClick={() => { setSelectedExercise(ex); setActiveTab('instructions'); }}
+                    className="bg-slate-800/90 border border-slate-700/60 rounded-2xl overflow-hidden shadow-lg hover:border-blue-500/30 transition-all cursor-pointer flex"
+                  >
+                    {/* Thumbnail */}
+                    <div className="w-24 bg-slate-900 relative flex-shrink-0 flex items-center justify-center overflow-hidden border-r border-slate-700/60 self-stretch min-h-[96px]">
+                      {hasImage ? (
+                        <img 
+                          src={getMediaUrl(imageToShow)} 
+                          alt={ex.name} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Si falla la carga, ocultar imagen y mostrar placeholder
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="text-slate-500 p-2 text-center">
+                          <Dumbbell size={24} className="mx-auto opacity-40 mb-1" />
+                          <span className="text-[10px] block opacity-50">Sin foto</span>
+                        </div>
+                      )}
+                      {ex.customVideoUrl && (
+                        <span className="absolute bottom-1 right-1 bg-blue-605 text-white p-1 rounded-md shadow flex items-center justify-center">
+                          <Play size={10} fill="white" />
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 p-3 flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start gap-1">
+                          <h3 className="font-bold text-white text-sm line-clamp-1">
+                            {ex.nameEs || ex.name}
+                          </h3>
+                          {ex.difficulty && (
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold border ${getDifficultyColor(ex.difficulty)}`}>
+                              {getDifficultyLabel(ex.difficulty)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-0.5 capitalize flex items-center gap-1">
+                          <span className="font-bold text-blue-400">{formatText(ex.muscleGroup || ex.bodyPart)}</span>
+                          {ex.equipment && <span>• {formatText(ex.equipment)}</span>}
+                        </p>
+                      </div>
+
+                      {/* Acciones */}
+                      <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-700/40">
+                        <span className="text-[10px] bg-slate-900 text-slate-400 px-2 py-0.5 rounded-md font-medium border border-slate-800">
+                          {formatText(ex.category)}
+                        </span>
+                        
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <button 
+                            onClick={(e) => handleOpenEdit(ex, e)}
+                            className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-700/50 rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button 
+                            onClick={(e) => handleDelete(ex.id, e)}
+                            className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-955/30 rounded-lg transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {searchTerm.trim() === '' && filteredExercises.length > visibleLimit && (
+              <div className="pt-2 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setVisibleLimit(prev => prev + 10)}
+                  className="w-full py-3.5 bg-slate-800 hover:bg-slate-750 text-blue-400 border border-slate-700/60 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-md flex items-center justify-center gap-1"
                 >
-                  {/* Thumbnail */}
-                  <div className="w-24 h-24 bg-slate-100 relative flex-shrink-0 flex items-center justify-center overflow-hidden border-r border-slate-100">
-                    {hasImage ? (
-                      <img 
-                        src={getMediaUrl(imageToShow)} 
-                        alt={ex.name} 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          // Si falla la carga, ocultar imagen y mostrar placeholder
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="text-slate-400 p-2 text-center">
-                        <Dumbbell size={24} className="mx-auto opacity-40 mb-1" />
-                        <span className="text-[10px] block opacity-50">Sin foto</span>
-                      </div>
-                    )}
-                    {ex.customVideoUrl && (
-                      <span className="absolute bottom-1 right-1 bg-blue-600 text-white p-1 rounded-md shadow flex items-center justify-center">
-                        <Play size={10} fill="white" />
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 p-3 flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-start gap-1">
-                        <h3 className="font-bold text-slate-800 text-sm line-clamp-1">
-                          {ex.nameEs || ex.name}
-                        </h3>
-                        {ex.difficulty && (
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold border ${getDifficultyColor(ex.difficulty)}`}>
-                            {getDifficultyLabel(ex.difficulty)}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-slate-400 mt-0.5 capitalize flex items-center gap-1">
-                        <span className="font-bold text-blue-600">{formatText(ex.muscleGroup || ex.bodyPart)}</span>
-                        {ex.equipment && <span>• {formatText(ex.equipment)}</span>}
-                      </p>
-                    </div>
-
-                    {/* Acciones */}
-                    <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-50">
-                      <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-medium">
-                        {formatText(ex.category)}
-                      </span>
-                      
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <button 
-                          onClick={(e) => handleOpenEdit(ex, e)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Editar"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button 
-                          onClick={(e) => handleDelete(ex.id, e)}
-                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                  Mostrar más...
+                </button>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-3xl border border-slate-100 shadow-sm">
-            <HelpCircle size={40} className="text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500 font-semibold text-sm">No encontramos ejercicios</p>
-            <p className="text-slate-400 text-xs mt-1">Prueba con otra búsqueda o filtro</p>
+          <div className="text-center py-12 bg-slate-800 border border-slate-700/60 rounded-3xl shadow-lg">
+            <HelpCircle size={40} className="text-slate-500 mx-auto mb-3" />
+            <p className="text-slate-300 font-semibold text-sm">No encontramos ejercicios</p>
+            <p className="text-slate-500 text-xs mt-1">Prueba con otra búsqueda o filtro</p>
             <button 
               onClick={handleOpenCreate}
-              className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded-xl transition-all shadow-md shadow-blue-500/20"
+              className="mt-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs py-3 px-4 rounded-xl transition-all shadow-lg shadow-blue-500/20 active:scale-95"
             >
               + Crear Ejercicio Nuevo
             </button>
@@ -455,7 +503,7 @@ export const ExerciseLibrary: React.FC = () => {
       {/* DETALLE DEL EJERCICIO (SHEET MODAL) */}
       {selectedExercise && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/60 backdrop-blur-sm p-0 sm:p-4">
-          <div className="bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[85vh] animate-in slide-in-from-bottom duration-300">
+          <div className="bg-slate-900 w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2rem] border-t sm:border border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[85vh] animate-in slide-in-from-bottom duration-300">
             
             {/* Cabecera / Banner */}
             <div className="relative h-48 bg-slate-900 flex-shrink-0">
@@ -529,13 +577,13 @@ export const ExerciseLibrary: React.FC = () => {
             </div>
 
             {/* Selector de pestañas */}
-            <div className="flex border-b border-slate-100 bg-slate-50 p-1 flex-shrink-0">
+            <div className="flex border-b border-slate-800 bg-slate-950 p-1 flex-shrink-0">
               <button
                 onClick={() => setActiveTab('instructions')}
                 className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all ${
                   activeTab === 'instructions'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-slate-800 text-blue-400 shadow-sm text-white'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Guía de Ejecución
@@ -544,8 +592,8 @@ export const ExerciseLibrary: React.FC = () => {
                 onClick={() => setActiveTab('details')}
                 className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all ${
                   activeTab === 'details'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-slate-800 text-blue-400 shadow-sm text-white'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Ficha Técnica
@@ -554,8 +602,8 @@ export const ExerciseLibrary: React.FC = () => {
                 onClick={() => setActiveTab('media')}
                 className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all ${
                   activeTab === 'media'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-slate-800 text-blue-400 shadow-sm text-white'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Mi Multimedia
@@ -569,11 +617,11 @@ export const ExerciseLibrary: React.FC = () => {
                 <div className="space-y-4">
                   {/* Descripción */}
                   {selectedExercise.descriptionEs && (
-                    <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4">
-                      <h4 className="text-xs font-bold text-blue-800 mb-1 flex items-center gap-1">
+                    <div className="bg-blue-600/10 border border-blue-900/30 rounded-2xl p-4">
+                      <h4 className="text-xs font-bold text-blue-400 mb-1 flex items-center gap-1">
                         <Sparkles size={14} /> Enfoque
                       </h4>
-                      <p className="text-xs text-slate-600 leading-relaxed">
+                      <p className="text-xs text-slate-300 leading-relaxed">
                         {selectedExercise.descriptionEs}
                       </p>
                     </div>
@@ -581,35 +629,35 @@ export const ExerciseLibrary: React.FC = () => {
 
                   {/* Pasos */}
                   <div>
-                    <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5">
-                      <BookOpen size={16} className="text-blue-600" />
+                    <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-1.5">
+                      <BookOpen size={16} className="text-blue-500" />
                       Instrucciones paso a paso
                     </h4>
                     {selectedExercise.instructionsEs ? (
                       <div className="space-y-3">
                         {selectedExercise.instructionsEs.split('\n').filter(Boolean).map((step, idx) => (
                           <div key={idx} className="flex gap-3 items-start">
-                            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                            <span className="w-5 h-5 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
                               {idx + 1}
                             </span>
-                            <p className="text-xs text-slate-600 leading-relaxed">{step}</p>
+                            <p className="text-xs text-slate-300 leading-relaxed">{step}</p>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-400 italic">No hay instrucciones registradas para este ejercicio.</p>
+                      <p className="text-xs text-slate-500 italic">No hay instrucciones registradas para este ejercicio.</p>
                     )}
                   </div>
 
                   {/* Consejos */}
                   {selectedExercise.tipsEs && (
-                    <div className="border border-amber-200 bg-amber-50/50 rounded-2xl p-4">
-                      <h4 className="text-xs font-bold text-amber-800 mb-2 flex items-center gap-1">
+                    <div className="border border-amber-900/30 bg-amber-950/20 rounded-2xl p-4">
+                      <h4 className="text-xs font-bold text-amber-400 mb-2 flex items-center gap-1">
                         <AlertCircle size={14} /> Consejos de Seguridad
                       </h4>
                       <div className="space-y-1.5">
                         {selectedExercise.tipsEs.split('\n').filter(Boolean).map((tip, idx) => (
-                          <p key={idx} className="text-[11px] text-slate-600 flex items-start gap-1">
+                          <p key={idx} className="text-[11px] text-slate-300 flex items-start gap-1">
                             <span>•</span>
                             <span>{tip}</span>
                           </p>
@@ -624,39 +672,39 @@ export const ExerciseLibrary: React.FC = () => {
                 <div className="space-y-4">
                   {/* Grid Técnico */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Dificultad</p>
-                      <p className="text-xs font-bold text-slate-700 mt-1 capitalize">
+                    <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                      <p className="text-[10px] text-slate-500 font-semibold uppercase">Dificultad</p>
+                      <p className="text-xs font-bold text-white mt-1 capitalize">
                         {getDifficultyLabel(selectedExercise.difficulty)}
                       </p>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Mecánica</p>
-                      <p className="text-xs font-bold text-slate-700 mt-1 capitalize">
+                    <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                      <p className="text-[10px] text-slate-500 font-semibold uppercase">Mecánica</p>
+                      <p className="text-xs font-bold text-white mt-1 capitalize">
                         {selectedExercise.mechanic ? formatText(selectedExercise.mechanic) : 'Compuesto'}
                       </p>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Fuerza</p>
-                      <p className="text-xs font-bold text-slate-700 mt-1 capitalize">
+                    <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                      <p className="text-[10px] text-slate-500 font-semibold uppercase">Fuerza</p>
+                      <p className="text-xs font-bold text-white mt-1 capitalize">
                         {selectedExercise.forceType ? formatText(selectedExercise.forceType) : 'Push'}
                       </p>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Equipamiento</p>
-                      <p className="text-xs font-bold text-slate-700 mt-1 capitalize">
+                    <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                      <p className="text-[10px] text-slate-500 font-semibold uppercase">Equipamiento</p>
+                      <p className="text-xs font-bold text-white mt-1 capitalize">
                         {selectedExercise.equipment ? formatText(selectedExercise.equipment) : 'Peso Corporal'}
                       </p>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Gasto MET</p>
-                      <p className="text-xs font-bold text-slate-700 mt-1">
-                        {selectedExercise.met || '6.0'} <span className="text-[10px] text-slate-400 font-normal">kcal/kg/h</span>
+                    <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                      <p className="text-[10px] text-slate-500 font-semibold uppercase">Gasto MET</p>
+                      <p className="text-xs font-bold text-white mt-1">
+                        {selectedExercise.met || '6.0'} <span className="text-[10px] text-slate-500 font-normal">kcal/kg/h</span>
                       </p>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Tipo de Set</p>
-                      <p className="text-xs font-bold text-slate-700 mt-1">
+                    <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                      <p className="text-[10px] text-slate-500 font-semibold uppercase">Tipo de Set</p>
+                      <p className="text-xs font-bold text-white mt-1">
                         {selectedExercise.isTimeBased ? 'Por Tiempo' : 'Repeticiones'}
                       </p>
                     </div>
@@ -666,10 +714,10 @@ export const ExerciseLibrary: React.FC = () => {
                   <div className="space-y-3 pt-2">
                     {selectedExercise.primaryMuscles && (
                       <div>
-                        <h5 className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Músculos Primarios</h5>
+                        <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Músculos Primarios</h5>
                         <div className="flex flex-wrap gap-1.5">
                           {selectedExercise.primaryMuscles.split(',').map(m => (
-                            <span key={m} className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-lg text-xs font-semibold">
+                            <span key={m} className="bg-blue-600/20 text-blue-400 border border-blue-900/30 px-2 py-0.5 rounded-lg text-xs font-semibold">
                               {formatText(m)}
                             </span>
                           ))}
@@ -678,10 +726,10 @@ export const ExerciseLibrary: React.FC = () => {
                     )}
                     {selectedExercise.secondaryMuscles && (
                       <div>
-                        <h5 className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Músculos Secundarios</h5>
+                        <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Músculos Secundarios</h5>
                         <div className="flex flex-wrap gap-1.5">
                           {selectedExercise.secondaryMuscles.split(',').map(m => (
-                            <span key={m} className="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-lg text-xs font-semibold">
+                            <span key={m} className="bg-slate-800 text-slate-300 border border-slate-800 px-2 py-0.5 rounded-lg text-xs font-semibold">
                               {formatText(m)}
                             </span>
                           ))}
@@ -696,8 +744,8 @@ export const ExerciseLibrary: React.FC = () => {
                 <div className="space-y-4 text-center">
                   {/* Foto de Portada Personalizada */}
                   {selectedExercise.customImageUrl ? (
-                    <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-black">
-                      <p className="text-[10px] bg-slate-900 text-slate-300 py-1.5 font-bold uppercase">Foto del Usuario</p>
+                    <div className="border border-slate-800 rounded-2xl overflow-hidden shadow-lg bg-black">
+                      <p className="text-[10px] bg-slate-950 text-slate-400 py-1.5 font-bold uppercase">Foto del Usuario</p>
                       <img 
                         src={getMediaUrl(selectedExercise.customImageUrl)} 
                         alt="Usuario" 
@@ -705,10 +753,10 @@ export const ExerciseLibrary: React.FC = () => {
                       />
                     </div>
                   ) : (
-                    <div className="border border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50 flex flex-col items-center">
-                      <ImageIcon size={32} className="text-slate-400 mb-2" />
-                      <p className="text-xs text-slate-500 font-semibold">Sin imagen personalizada</p>
-                      <p className="text-[10px] text-slate-400 mt-1 max-w-[200px]">
+                    <div className="border border-dashed border-slate-700 rounded-2xl p-6 bg-slate-900/40 flex flex-col items-center">
+                      <ImageIcon size={32} className="text-slate-500 mb-2" />
+                      <p className="text-xs text-slate-400 font-semibold">Sin imagen personalizada</p>
+                      <p className="text-[10px] text-slate-500 mt-1 max-w-[200px]">
                         Puedes editar el ejercicio para añadir la URL de una foto haciendo el movimiento.
                       </p>
                     </div>
@@ -716,8 +764,8 @@ export const ExerciseLibrary: React.FC = () => {
 
                   {/* Video Personalizado */}
                   {selectedExercise.customVideoUrl ? (
-                    <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-black">
-                      <p className="text-[10px] bg-slate-900 text-slate-300 py-1.5 font-bold uppercase">Video de Ejecución</p>
+                    <div className="border border-slate-800 rounded-2xl overflow-hidden shadow-lg bg-black">
+                      <p className="text-[10px] bg-slate-950 text-slate-400 py-1.5 font-bold uppercase">Video de Ejecución</p>
                       <video 
                         src={getMediaUrl(selectedExercise.customVideoUrl)} 
                         controls 
@@ -725,10 +773,10 @@ export const ExerciseLibrary: React.FC = () => {
                       />
                     </div>
                   ) : (
-                    <div className="border border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50 flex flex-col items-center">
-                      <Video size={32} className="text-slate-400 mb-2" />
-                      <p className="text-xs text-slate-500 font-semibold">Sin video personalizado</p>
-                      <p className="text-[10px] text-slate-400 mt-1 max-w-[200px]">
+                    <div className="border border-dashed border-slate-700 rounded-2xl p-6 bg-slate-900/40 flex flex-col items-center">
+                      <Video size={32} className="text-slate-500 mb-2" />
+                      <p className="text-xs text-slate-400 font-semibold">Sin video personalizado</p>
+                      <p className="text-[10px] text-slate-500 mt-1 max-w-[200px]">
                         Grábate o añade un video de YouTube/MP4 para ver tu postura.
                       </p>
                     </div>
@@ -737,7 +785,7 @@ export const ExerciseLibrary: React.FC = () => {
                   {/* Botón rápido para editar */}
                   <button
                     onClick={(e) => { setSelectedExercise(null); handleOpenEdit(selectedExercise, e); }}
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-all shadow-md flex items-center justify-center gap-1"
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-1 active:scale-95"
                   >
                     <Edit2 size={14} /> Editar Contenido y Multimedia
                   </button>
@@ -752,15 +800,15 @@ export const ExerciseLibrary: React.FC = () => {
       {/* FORMULARIO DE CREACIÓN/EDICIÓN (MODAL) */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
-              <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
+          <div className="bg-slate-900 w-full max-w-md rounded-2xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950 flex-shrink-0">
+              <h3 className="font-bold text-white flex items-center gap-1.5">
                 <Sparkles className="text-blue-500" size={18} />
                 {editingEx ? 'Editar Ejercicio' : 'Crear Ejercicio Nuevo'}
               </h3>
               <button 
                 onClick={() => { setIsFormOpen(false); setEditingEx(null); }}
-                className="p-1 rounded-full text-slate-400 hover:bg-slate-200 transition-colors"
+                className="p-1 rounded-full text-slate-400 hover:bg-slate-800 transition-colors"
               >
                 <X size={20} />
               </button>
@@ -770,12 +818,12 @@ export const ExerciseLibrary: React.FC = () => {
               
               {/* Nombre */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre (Español)</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Nombre (Español)</label>
                 <input 
                   type="text" 
                   value={formData.nameEs}
                   onChange={(e) => setFormData({...formData, nameEs: e.target.value})}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs placeholder-slate-500"
                   placeholder="Ej. Rueda Abdominal"
                   required
                 />
@@ -784,11 +832,11 @@ export const ExerciseLibrary: React.FC = () => {
               {/* Grupo Muscular & Dificultad */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Grupo Muscular</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Grupo Muscular</label>
                   <select 
                     value={formData.bodyPart}
                     onChange={(e) => setFormData({...formData, bodyPart: e.target.value})}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white text-xs"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs"
                   >
                     <option value="pecho">Pecho</option>
                     <option value="espalda">Espalda</option>
@@ -797,14 +845,15 @@ export const ExerciseLibrary: React.FC = () => {
                     <option value="triceps">Tríceps</option>
                     <option value="hombros">Hombros</option>
                     <option value="core">Core</option>
+                    <option value="fullbody">Full Body</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Dificultad</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Dificultad</label>
                   <select 
                     value={formData.difficulty}
                     onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white text-xs"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs"
                   >
                     <option value="beginner">Principiante</option>
                     <option value="intermediate">Intermedio</option>
@@ -816,22 +865,22 @@ export const ExerciseLibrary: React.FC = () => {
               {/* Músculos Primarios y Secundarios */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Músculos Primarios</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Músculos Primarios</label>
                   <input 
                     type="text" 
                     value={formData.primaryMuscles}
                     onChange={(e) => setFormData({...formData, primaryMuscles: e.target.value})}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs placeholder-slate-500"
                     placeholder="ej. rectus_abdominis"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Músculos Secundarios</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Músculos Secundarios</label>
                   <input 
                     type="text" 
                     value={formData.secondaryMuscles}
                     onChange={(e) => setFormData({...formData, secondaryMuscles: e.target.value})}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs placeholder-slate-500"
                     placeholder="ej. obliques"
                   />
                 </div>
@@ -840,11 +889,11 @@ export const ExerciseLibrary: React.FC = () => {
               {/* Equipamiento y Tipo de Medición */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Equipamiento</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Equipamiento</label>
                   <select 
                     value={formData.equipment}
                     onChange={(e) => setFormData({...formData, equipment: e.target.value})}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white text-xs"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs"
                   >
                     <option value="body_only">Peso Corporal</option>
                     <option value="dumbbell">Mancuernas</option>
@@ -855,12 +904,12 @@ export const ExerciseLibrary: React.FC = () => {
                   </select>
                 </div>
                 <div className="flex flex-col justify-end pb-1">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 cursor-pointer">
                     <input 
                       type="checkbox"
                       checked={formData.isTimeBased}
                       onChange={(e) => setFormData({...formData, isTimeBased: e.target.checked})}
-                      className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 rounded border-slate-700 bg-slate-800 focus:ring-blue-500"
                     />
                     ¿Por tiempo? (Segundos)
                   </label>
@@ -869,51 +918,51 @@ export const ExerciseLibrary: React.FC = () => {
 
               {/* Instrucciones */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Instrucciones (Línea por paso)</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Instrucciones (Línea por paso)</label>
                 <textarea 
                   value={formData.instructionsEs}
                   onChange={(e) => setFormData({...formData, instructionsEs: e.target.value})}
                   rows={3}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs placeholder-slate-500"
                   placeholder="Arrodíllate en el suelo y agarra las asas...&#10;Activa el core y rueda lentamente...&#10;Regresa contrayendo abdominales..."
                 />
               </div>
 
               {/* Consejos */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Consejos de Seguridad</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Consejos de Seguridad</label>
                 <textarea 
                   value={formData.tipsEs}
                   onChange={(e) => setFormData({...formData, tipsEs: e.target.value})}
                   rows={2}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs placeholder-slate-500"
                   placeholder="Mantén la columna neutral.&#10;No permitas dolor en la zona lumbar."
                 />
               </div>
 
               {/* Multimedia Personalizada */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
                   <Video size={14} className="text-blue-500" />
                   Multimedia Local o URL
                 </h4>
                 <div>
-                  <label className="block text-[10px] font-semibold text-slate-500 mb-1">Ruta/URL de Foto</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 mb-1">Ruta/URL de Foto</label>
                   <input 
                     type="text" 
                     value={formData.customImageUrl}
                     onChange={(e) => setFormData({...formData, customImageUrl: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-xs bg-white"
+                    className="w-full px-3 py-2 border border-slate-700 bg-slate-800 text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-xs placeholder-slate-500"
                     placeholder="ej. uploads/mi_ejercicio.jpg"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-slate-500 mb-1">Ruta/URL de Video (MP4)</label>
+                  <label className="block text-[10px] font-semibold text-slate-400 mb-1">Ruta/URL de Video (MP4)</label>
                   <input 
                     type="text" 
                     value={formData.customVideoUrl}
                     onChange={(e) => setFormData({...formData, customVideoUrl: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-xs bg-white"
+                    className="w-full px-3 py-2 border border-slate-700 bg-slate-800 text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-xs placeholder-slate-500"
                     placeholder="ej. uploads/mi_ejercicio.mp4"
                   />
                 </div>
@@ -924,13 +973,13 @@ export const ExerciseLibrary: React.FC = () => {
                 <button 
                   type="button"
                   onClick={() => { setIsFormOpen(false); setEditingEx(null); }}
-                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-200 transition-colors"
+                  className="flex-1 py-3 bg-slate-800 text-slate-300 border border-slate-700 rounded-xl font-bold text-xs hover:bg-slate-700 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-colors shadow-md"
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs transition-colors shadow-lg shadow-blue-600/30"
                 >
                   {editingEx ? 'Guardar Cambios' : 'Crear Ejercicio'}
                 </button>

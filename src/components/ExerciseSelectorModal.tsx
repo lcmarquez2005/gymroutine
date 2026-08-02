@@ -113,11 +113,11 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
-        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-          <h3 className="font-bold text-lg text-slate-800">Librería de Ejercicios</h3>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-200 rounded-full transition-colors">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+      <div className="bg-slate-900 w-full max-w-md rounded-3xl border border-slate-800 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+        <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+          <h3 className="font-bold text-lg text-white">Librería de Ejercicios</h3>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-800 rounded-full transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -126,13 +126,13 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
           {!isCreating ? (
             <>
               <div className="relative mb-4">
-                <Search className="absolute left-3 top-3 text-slate-400" size={18} />
+                <Search className="absolute left-3 top-3 text-slate-500" size={18} />
                 <input 
                   type="text" 
                   placeholder="Buscar ejercicio..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-slate-500"
                 />
               </div>
 
@@ -146,11 +146,11 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
                     <div 
                       key={ex.id} 
                       onClick={() => { onSelect(ex); onClose(); }}
-                      className="p-2 border border-slate-100 rounded-xl hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition-colors flex items-center justify-between gap-3"
+                      className="p-2 border border-slate-800/60 rounded-xl hover:bg-slate-800 cursor-pointer transition-colors flex items-center justify-between gap-3"
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         {/* Thumbnail */}
-                        <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center border border-slate-100">
+                        <div className="w-12 h-12 bg-slate-950 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center border border-slate-800/60">
                           {hasImage ? (
                             <img 
                               src={getMediaUrl(imageToShow)} 
@@ -161,13 +161,13 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
                               }}
                             />
                           ) : (
-                            <Dumbbell size={16} className="text-slate-400 opacity-60" />
+                            <Dumbbell size={16} className="text-slate-500 opacity-60" />
                           )}
                         </div>
 
                         <div className="min-w-0">
-                          <p className="font-semibold text-slate-800 text-sm truncate">{ex.nameEs || ex.name}</p>
-                          <p className="text-[10px] text-slate-500 capitalize truncate">{ex.muscleGroup || ex.bodyPart}</p>
+                          <p className="font-semibold text-white text-sm truncate">{ex.nameEs || ex.name}</p>
+                          <p className="text-[10px] text-slate-400 capitalize truncate">{ex.muscleGroup || ex.bodyPart}</p>
                         </div>
                       </div>
 
@@ -179,7 +179,7 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
                               deleteExerciseFromLibrary(ex.id).catch(() => alert('Error al eliminar'));
                             }
                           }}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-955/30 rounded-lg transition-colors"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -195,7 +195,7 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
 
               <button 
                 onClick={() => setIsCreating(true)}
-                className="w-full py-3 border-2 border-dashed border-blue-200 text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-colors"
+                className="w-full py-3 border-2 border-dashed border-blue-900/30 text-blue-400 rounded-xl font-semibold hover:bg-blue-600/10 transition-colors"
               >
                 + Crear Ejercicio Nuevo
               </button>
@@ -203,21 +203,21 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
           ) : (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Ejercicio</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Nombre del Ejercicio</label>
                 <input 
                   type="text" 
                   value={newExName}
                   onChange={(e) => setNewExName(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full px-4 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-500"
                   placeholder="Ej. Press Inclinado"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Grupo Muscular</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Grupo Muscular</label>
                 <select 
                   value={newExMuscle}
                   onChange={(e) => setNewExMuscle(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                  className="w-full px-4 py-2 bg-slate-950 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="pecho">Pecho</option>
                   <option value="espalda">Espalda</option>
@@ -226,15 +226,16 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
                   <option value="triceps">Tríceps</option>
                   <option value="hombros">Hombros</option>
                   <option value="core">Core</option>
+                  <option value="fullbody">Full Body</option>
                 </select>
               </div>
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={isTimeBased}
                     onChange={(e) => setIsTimeBased(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 rounded border-slate-700 bg-slate-950 focus:ring-blue-500"
                   />
                   Es un ejercicio por tiempo (ej. Planchas)
                 </label>
@@ -242,14 +243,14 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
               <div className="flex gap-2 pt-2">
                 <button 
                   onClick={() => setIsCreating(false)}
-                  className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
+                  className="flex-1 py-2 bg-slate-800 text-slate-300 rounded-xl font-semibold hover:bg-slate-700 transition-colors border border-slate-700"
                 >
                   Cancelar
                 </button>
                 <button 
                   onClick={handleCreate}
                   disabled={!newExName.trim()}
-                  className="flex-1 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="flex-1 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-500 transition-colors disabled:opacity-50"
                 >
                   Crear y Añadir
                 </button>

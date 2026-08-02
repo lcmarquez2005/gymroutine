@@ -30,18 +30,18 @@ export const Dashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-slate-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600"></div>
+      <div className="flex justify-center items-center h-screen bg-slate-950">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-slate-50 min-h-screen pb-24">
+    <div className="w-full bg-slate-900 min-h-screen pb-24 text-slate-100">
       {/* Header */}
-      <div className="bg-blue-600 px-6 pt-8 pb-10 text-white rounded-b-3xl shadow-md">
+      <div className="bg-slate-950 border-b border-slate-800/80 px-6 pt-8 pb-10 text-white rounded-b-3xl shadow-xl">
         <h1 className="text-2xl font-bold">¡A entrenar!</h1>
-        <p className="text-blue-100 mt-1">Elige tu rutina para hoy</p>
+        <p className="text-blue-400 mt-1">Elige tu rutina para hoy</p>
         
         {/* Day Selector */}
         <div className="flex justify-between items-center mt-6">
@@ -51,8 +51,8 @@ export const Dashboard: React.FC = () => {
               onClick={() => setSelectedDay(day.key)}
               className={`flex flex-col items-center justify-center w-10 h-12 rounded-xl font-semibold transition-all duration-300 ${
                 selectedDay === day.key
-                  ? 'bg-white text-blue-600 shadow-lg scale-110'
-                  : 'text-blue-100 hover:bg-white/20'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-110'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
               }`}
             >
               <span className="text-sm">{day.label}</span>
@@ -63,8 +63,8 @@ export const Dashboard: React.FC = () => {
 
       <div className="px-6 py-6 mt-2">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-slate-800 capitalize flex items-center gap-2">
-            <Calendar className="text-blue-600" size={24} />
+          <h2 className="text-xl font-bold text-white capitalize flex items-center gap-2">
+            <Calendar className="text-blue-500" size={24} />
             Rutinas del {selectedDay}
           </h2>
         </div>
@@ -74,15 +74,15 @@ export const Dashboard: React.FC = () => {
             routinesForSelectedDay.map((routine) => (
               <div 
                 key={routine.id}
-                className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300 flex justify-between items-center"
+                className="bg-slate-800/90 border border-slate-700/60 rounded-2xl p-5 shadow-lg hover:shadow-xl hover:border-blue-500/30 transition-all duration-300 flex justify-between items-center"
               >
                 <div>
-                  <h3 className="font-bold text-lg text-slate-800">{routine.name}</h3>
-                  <p className="text-sm text-slate-500 mt-1 capitalize">{routine.exercises.length} Ejercicios • {routine.targetMuscleGroup}</p>
+                  <h3 className="font-bold text-lg text-white">{routine.name}</h3>
+                  <p className="text-sm text-slate-300 mt-1 capitalize">{routine.exercises.length} Ejercicios • {routine.targetMuscleGroup}</p>
                 </div>
                 <button 
                   onClick={() => handleStartWorkout(routine.id)}
-                  className="bg-blue-50 text-blue-600 p-3 rounded-full hover:bg-blue-100 transition-colors"
+                  className="bg-blue-600/20 text-blue-400 p-3 rounded-full hover:bg-blue-600 hover:text-white transition-all active:scale-95"
                   title="Empezar entrenamiento"
                 >
                   <PlayCircle size={28} />
@@ -90,15 +90,15 @@ export const Dashboard: React.FC = () => {
               </div>
             ))
           ) : (
-            <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-8 text-center mt-6">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="text-slate-400" size={32} />
+            <div className="bg-slate-800/50 border border-dashed border-slate-700 rounded-2xl p-8 text-center mt-6">
+              <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800">
+                <Calendar className="text-slate-500" size={32} />
               </div>
-              <h3 className="text-lg font-bold text-slate-800 mb-2">Día de Descanso</h3>
-              <p className="text-slate-500 text-sm mb-6">No tienes ninguna rutina programada para este día.</p>
+              <h3 className="text-lg font-bold text-white mb-2">Día de Descanso</h3>
+              <p className="text-slate-300 text-sm mb-6">No tienes ninguna rutina programada para este día.</p>
               <button 
                 onClick={() => navigate('/routines/new')}
-                className="bg-blue-600 text-white font-medium py-2 px-6 rounded-xl shadow-md shadow-blue-600/30 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 mx-auto"
+                className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-2 mx-auto"
               >
                 <Plus size={20} />
                 Crear Rutina
