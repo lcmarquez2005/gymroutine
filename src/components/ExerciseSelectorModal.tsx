@@ -3,6 +3,36 @@ import { useWorkout } from '../hooks/useWorkout';
 import type { Exercise } from '../types';
 import { X, Plus, Search, Trash2, Dumbbell } from 'lucide-react';
 
+const normalizeString = (str: string | undefined): string => {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // Remueve acentos y diacríticos
+};
+
+const matchesFuzzy = (ex: Exercise, searchTerm: string): boolean => {
+  const cleanSearch = normalizeString(searchTerm).trim();
+  if (!cleanSearch) return true;
+
+  // Dividimos la búsqueda por palabras para hacer una búsqueda tipo LIKE/AND
+  const searchWords = cleanSearch.split(/\s+/);
+  
+  const textPool = [
+    ex.name,
+    ex.nameEs || '',
+    ex.nameEn || '',
+    ex.primaryMuscles || '',
+    ex.secondaryMuscles || '',
+    ex.equipment || '',
+    ex.bodyPart || '',
+    ex.muscleGroup || ''
+  ].map(s => normalizeString(s)).join(' ');
+
+  // Cada palabra buscada debe estar en la bolsa de texto
+  return searchWords.every(word => textPool.includes(word));
+};
+
 interface ExerciseSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -88,10 +118,7 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
     };
   };
 
-  const filteredExercises = exerciseLibrary.filter(ex => 
-    ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ex.nameEs?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredExercises = exerciseLibrary.filter(ex => matchesFuzzy(ex, searchTerm));
 
   const handleCreate = async () => {
     if (newExName.trim()) {
@@ -113,8 +140,8 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 w-full max-w-md rounded-3xl border border-slate-800 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+      <div className="bg-slate-900 w-full max-w-md rounded-3xl border border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
           <h3 className="font-bold text-lg text-white">Librería de Ejercicios</h3>
           <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-800 rounded-full transition-colors">

@@ -302,14 +302,14 @@ export const RoutineEditor: React.FC = () => {
                     </select>
                   </div>
                   
-                  <div className="p-4 bg-slate-800 space-y-2">
+                  <div className="p-2 sm:p-4 bg-slate-800 space-y-2">
                     {ex.sets.map((set, sIndex) => (
-                      <div key={set.id} className="flex items-center gap-2 text-sm">
-                        <span className="font-semibold text-slate-400 text-xs w-11 flex-shrink-0">Set {sIndex + 1}</span>
+                      <div key={set.id} className="flex items-center gap-1 sm:gap-2 text-sm">
+                        <span className="font-semibold text-slate-400 text-[10px] sm:text-xs w-9 sm:w-11 flex-shrink-0">Set {sIndex + 1}</span>
                         <div className="flex flex-1 items-center gap-2">
                           {set.setType === 'TIME' ? (
-                            <div className="flex items-center gap-2 w-full">
-                              <span className="text-orange-400 text-xs font-semibold whitespace-nowrap">Obj. Segs:</span>
+                            <div className="flex items-center gap-1 sm:gap-2 w-full">
+                              <span className="text-orange-400 text-[10px] sm:text-xs font-semibold whitespace-nowrap">Segs:</span>
                               <div className="flex items-center justify-between bg-slate-900 border border-slate-700/80 rounded-xl p-1 gap-1 focus-within:ring-2 focus-within:ring-orange-500 h-9 flex-1">
                                 <button
                                   type="button"
@@ -342,9 +342,9 @@ export const RoutineEditor: React.FC = () => {
                               </div>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-3 w-full">
-                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                <span className="text-blue-400 text-xs font-bold whitespace-nowrap">Kg:</span>
+                            <div className="flex items-center gap-1.5 sm:gap-3 w-full">
+                              <div className="flex items-center gap-0.5 sm:gap-1.5 flex-1 min-w-0">
+                                <span className="text-blue-400 text-[10px] sm:text-xs font-bold whitespace-nowrap">Kg:</span>
                                 <div className="flex items-center justify-between bg-slate-900 border border-slate-700/80 rounded-xl p-1 gap-1 focus-within:ring-2 focus-within:ring-blue-500 h-9 w-full">
                                   <button
                                     type="button"
@@ -378,8 +378,8 @@ export const RoutineEditor: React.FC = () => {
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                <span className="text-blue-400 text-xs font-bold whitespace-nowrap">Reps:</span>
+                              <div className="flex items-center gap-0.5 sm:gap-1.5 flex-1 min-w-0">
+                                <span className="text-blue-400 text-[10px] sm:text-xs font-bold whitespace-nowrap">Reps:</span>
                                 <div className="flex items-center justify-between bg-slate-900 border border-slate-700/80 rounded-xl p-1 gap-1 focus-within:ring-2 focus-within:ring-blue-500 h-9 w-full">
                                   <button
                                     type="button"

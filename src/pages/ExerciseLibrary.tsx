@@ -6,6 +6,36 @@ import {
   Image as ImageIcon, Sparkles, BookOpen, AlertCircle, HelpCircle
 } from 'lucide-react';
 
+const normalizeString = (str: string | undefined): string => {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // Remueve acentos y diacríticos
+};
+
+const matchesFuzzy = (ex: Exercise, searchTerm: string): boolean => {
+  const cleanSearch = normalizeString(searchTerm).trim();
+  if (!cleanSearch) return true;
+
+  // Dividimos la búsqueda por palabras para hacer una búsqueda tipo LIKE/AND
+  const searchWords = cleanSearch.split(/\s+/);
+  
+  const textPool = [
+    ex.name,
+    ex.nameEs || '',
+    ex.nameEn || '',
+    ex.primaryMuscles || '',
+    ex.secondaryMuscles || '',
+    ex.equipment || '',
+    ex.bodyPart || '',
+    ex.muscleGroup || ''
+  ].map(s => normalizeString(s)).join(' ');
+
+  // Cada palabra buscada debe estar en la bolsa de texto
+  return searchWords.every(word => textPool.includes(word));
+};
+
 export const ExerciseLibrary: React.FC = () => {
   const { 
     exerciseLibrary, 
@@ -136,11 +166,7 @@ export const ExerciseLibrary: React.FC = () => {
   // Filtrado de ejercicios
   const filteredExercises = useMemo(() => {
     return exerciseLibrary.filter(ex => {
-      const matchesSearch = 
-        ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ex.nameEs?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ex.nameEn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ex.primaryMuscles?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = matchesFuzzy(ex, searchTerm);
 
       const exerciseMuscle = (ex.muscleGroup || ex.bodyPart || '').toLowerCase();
       let matchesMuscle = selectedMuscle === 'all';
@@ -502,8 +528,8 @@ export const ExerciseLibrary: React.FC = () => {
 
       {/* DETALLE DEL EJERCICIO (SHEET MODAL) */}
       {selectedExercise && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/60 backdrop-blur-sm p-0 sm:p-4">
-          <div className="bg-slate-900 w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2rem] border-t sm:border border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[85vh] animate-in slide-in-from-bottom duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 w-full max-w-md rounded-3xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-250">
             
             {/* Cabecera / Banner */}
             <div className="relative h-48 bg-slate-900 flex-shrink-0">
