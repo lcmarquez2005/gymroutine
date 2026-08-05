@@ -2,7 +2,6 @@ import React from 'react';
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Home, Dumbbell, User as UserIcon, BookOpen, Maximize } from 'lucide-react';
-import { PWAInstallPrompt } from '../components/PWAInstallPrompt';
 
 export const MainLayout: React.FC = () => {
   const { user } = useAuth();
@@ -34,9 +33,6 @@ export const MainLayout: React.FC = () => {
         <div className={`flex-1 w-full ${showBottomNav ? 'pb-24' : ''}`}>
           <Outlet />
         </div>
-
-        {/* PWA Install Prompt Banner */}
-        <PWAInstallPrompt />
 
         {/* Bottom Navigation */}
         {showBottomNav && (
