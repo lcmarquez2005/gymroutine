@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkout } from '../hooks/useWorkout';
 import type { Exercise } from '../types';
-import { Check, ChevronLeft, ChevronRight, Dumbbell, Save, Timer, Play, Pause, Square, MoreVertical, Plus, Minus } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Dumbbell, Save, Timer, Play, Pause, Square, MoreVertical, Plus, Minus, AlertTriangle } from 'lucide-react';
 
 export const ActiveWorkout: React.FC = () => {
   const { activeWorkout, updateSet, finishWorkout, updateExerciseFeedback } = useWorkout();
@@ -18,6 +18,25 @@ export const ActiveWorkout: React.FC = () => {
   useEffect(() => {
     setIsHovered(false);
   }, [currentIndex]);
+
+  // Cerrar el reporte de bienestar al hacer click fuera del menú y del botón disparador
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (openMenuId && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        const triggerButton = (event.target as HTMLElement).closest('[title="Reporte de Bienestar"]');
+        if (!triggerButton) {
+          setOpenMenuId(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [openMenuId]);
 
   const getMediaUrl = (path: string | null | undefined) => {
     if (!path) return '';
@@ -88,6 +107,7 @@ export const ActiveWorkout: React.FC = () => {
   const [timerOffset, setTimerOffset] = useState({ x: 0, y: 0 });
   const [isDraggingTimer, setIsDraggingTimer] = useState(false);
   const timerDragStart = useRef({ x: 0, y: 0, initX: 0, initY: 0 });
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button')) return;
@@ -207,10 +227,10 @@ export const ActiveWorkout: React.FC = () => {
 
         {/* Header Inmersivo */}
         <div className="sticky top-0 bg-slate-900/90 backdrop-blur-md z-10 flex flex-col">
-          <div className="px-6 py-4 flex items-center justify-between">
+          <div className="px-6 py-2 flex items-center justify-between">
             <button
               onClick={() => navigate('/')}
-              className="p-2 -ml-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              className="p-1.5 -ml-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
             >
               <ChevronLeft size={24} />
             </button>
@@ -306,18 +326,31 @@ export const ActiveWorkout: React.FC = () => {
         ) : null}
 
         {/* Ejercicio Actual (Card Principal) */}
-        <div className="flex-1 px-4 pt-4 flex flex-col ">
+        <div className="flex-1 px-4 pt-4 pb-24 flex flex-col ">
           <div className="bg-slate-800 rounded-3xl overflow-hidden border border-slate-700 shadow-2xl animate-in slide-in-from-right-8 duration-300" key={currentExercise.id}>
-            <div className="bg-slate-800 px-6 py-6 border-b border-slate-700 flex flex-col items-center gap-3 text-center relative">
-              <button 
-                onClick={() => setOpenMenuId(openMenuId === currentExercise.id ? null : currentExercise.id)}
-                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-700 transition-colors"
-              >
-                <MoreVertical size={20} />
-              </button>
+            <div className="bg-slate-800 px-3 py-6 border-b border-slate-700 flex flex-col items-center gap-3 text-center relative">
+              <div className="absolute top-4 right-4 flex flex-col gap-2 z-30">
+                <button 
+                  type="button"
+                  className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-700 transition-colors"
+                >
+                  <MoreVertical size={20} />
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setOpenMenuId(openMenuId === currentExercise.id ? null : currentExercise.id)}
+                  className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-700 transition-colors"
+                  title="Reporte de Bienestar"
+                >
+                  <AlertTriangle size={20} className="text-red-500 hover:text-red-400 transition-colors" />
+                </button>
+              </div>
               
               {openMenuId === currentExercise.id && (
-                <div className="absolute top-14 right-4 bg-slate-800 border border-slate-700 shadow-2xl rounded-2xl p-4 w-64 z-20 animate-in fade-in zoom-in-95 duration-200">
+                <div 
+                  ref={menuRef}
+                  className="absolute top-[100px] right-4 bg-slate-800 border border-slate-700 shadow-2xl rounded-2xl p-4 w-64 z-20 animate-in fade-in zoom-in-95 duration-200"
+                >
                   <h4 className="text-sm font-bold text-slate-300 mb-3 text-left">Reporte de Bienestar</h4>
                   <div className="space-y-3 text-left">
                     <label className="flex items-center gap-3 cursor-pointer">
@@ -389,23 +422,22 @@ export const ActiveWorkout: React.FC = () => {
                 );
               })()}
               <h2 className="text-2xl font-bold text-white">{currentExercise.name}</h2>
-              <p className="text-slate-400 text-sm capitalize">{currentExercise.muscleGroup}</p>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="px-3 py-6 space-y-4">
               {/* Cabeceras de columnas */}
-              <div className="grid grid-cols-[30px_1.2fr_1.2fr_48px] gap-2 px-2 text-xs font-semibold text-slate-400 text-center uppercase tracking-wider mb-2">
+              <div className="grid grid-cols-[22px_1fr_1fr_36px] gap-1.5 px-1.5 text-xs font-semibold text-slate-400 text-center uppercase tracking-wider mb-2">
                 <div>Set</div>
                 <div>Kg</div>
                 <div>Reps/Segs</div>
                 <div>Ok</div>
               </div>
-
+ 
               {/* Filas de Sets */}
               {currentExercise.sets.map((set, sIndex) => (
                 <div
                   key={set.id}
-                  className={`grid grid-cols-[30px_1.2fr_1.2fr_48px] gap-2 items-center p-2 rounded-2xl transition-all duration-300 ${set.completed ? 'bg-green-500/10 border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'bg-slate-900/60 border border-slate-700/50'
+                  className={`grid grid-cols-[22px_1fr_1fr_36px] gap-1.5 items-center p-1.5 rounded-2xl transition-all duration-300 ${set.completed ? 'bg-green-500/10 border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'bg-slate-900/60 border border-slate-700/50'
                     }`}
                 >
                   <div className="text-center font-bold text-slate-300 text-lg">
@@ -508,12 +540,12 @@ export const ActiveWorkout: React.FC = () => {
                   <div className="flex justify-center">
                     <button
                       onClick={() => updateSet(currentIndex, sIndex, { completed: !set.completed })}
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 ${set.completed
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 ${set.completed
                         ? 'bg-green-500 text-white shadow-lg shadow-green-500/40 scale-110'
                         : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
                         }`}
                     >
-                      <Check size={24} strokeWidth={set.completed ? 3 : 2} />
+                      <Check size={18} strokeWidth={set.completed ? 3 : 2} />
                     </button>
                   </div>
                 </div>
@@ -523,12 +555,12 @@ export const ActiveWorkout: React.FC = () => {
         </div>
 
         {/* Navegación Flotante Bottom */}
-        <div className="fixed bottom-0 w-full max-w-md bg-slate-900/90 backdrop-blur-xl border-t border-slate-800 p-4 pb-8 z-50">
+        <div className="fixed bottom-0 w-full max-w-md bg-slate-900/90 backdrop-blur-xl border-t border-slate-800 px-4 py-2 pb-4 z-50">
           <div className="flex gap-3">
             <button
               onClick={handlePrev}
               disabled={currentIndex === 0}
-              className="flex-1 bg-slate-800 text-slate-300 font-semibold py-4 rounded-2xl disabled:opacity-50 hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 bg-slate-800 text-slate-300 font-semibold py-2 rounded-2xl disabled:opacity-50 hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
             >
               <ChevronLeft size={20} />
               Anterior
@@ -538,7 +570,7 @@ export const ActiveWorkout: React.FC = () => {
               <button
                 onClick={handleCompleteWorkout}
                 disabled={isSaving}
-                className="flex-[2] bg-green-600 hover:bg-green-500 text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-green-600/30 flex items-center justify-center gap-2 transition-colors disabled:opacity-70"
+                className="flex-[2] bg-green-600 hover:bg-green-500 text-white font-bold text-lg py-2 rounded-2xl shadow-lg shadow-green-600/30 flex items-center justify-center gap-2 transition-colors disabled:opacity-70"
               >
                 {isSaving ? (
                   <>
@@ -555,7 +587,7 @@ export const ActiveWorkout: React.FC = () => {
             ) : (
               <button
                 onClick={handleNext}
-                className="flex-[2] bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-colors"
+                className="flex-[2] bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg py-2 rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-colors"
               >
                 Siguiente
                 <ChevronRight size={24} />
