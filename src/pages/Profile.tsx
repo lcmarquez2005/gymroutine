@@ -1,12 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useWorkout } from '../hooks/useWorkout';
-import { Calendar, User as UserIcon, Activity, Flame, LogOut, Clock, Weight, Download } from 'lucide-react';
+import { Calendar, User as UserIcon, Activity, LogOut, Clock, Weight, Download } from 'lucide-react';
+import { ShareToAIModal } from '../components/ShareToAIModal';
+import { ShareToAIButton } from '../components/ShareToAIButton';
 
 export const Profile: React.FC = () => {
   const { logout, user } = useAuth();
   const { workoutHistory } = useWorkout();
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [isShareAIOpen, setIsShareAIOpen] = useState(false);
+
+  // Cálculo de entrenos semana y mes
+  const { weeklyWorkouts, monthlyWorkouts } = useMemo(() => {
+    const now = new Date();
+    const day = now.getDay();
+    const diffToMon = day === 0 ? 6 : day - 1;
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - diffToMon);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const weekCount = workoutHistory.filter(s => new Date(s.date) >= startOfWeek).length;
+    const monthCount = workoutHistory.filter(s => new Date(s.date) >= startOfMonth).length;
+
+    return { weeklyWorkouts: weekCount, monthlyWorkouts: monthCount };
+  }, [workoutHistory]);
 
   // Estado PWA
   const [deferredPrompt, setDeferredPrompt] = useState<any>((window as any).deferredPrompt || null);
@@ -69,16 +89,18 @@ export const Profile: React.FC = () => {
           <h1 className="text-2xl font-bold">{user.name}</h1>
           <p className="text-blue-400 opacity-90">{user.email}</p>
 
-          <div className="flex justify-around mt-6 bg-slate-900/60 rounded-xl p-3 border border-slate-800">
-            <div className="text-center">
-              <span className="block text-xl font-bold">{workoutHistory.length}</span>
-              <span className="text-xs text-slate-300">Entrenos</span>
+          <div className="grid grid-cols-3 gap-2 mt-6 bg-slate-900/60 rounded-xl p-3 border border-slate-800 text-center">
+            <div>
+              <span className="block text-lg font-bold text-white">{workoutHistory.length}</span>
+              <span className="text-[11px] text-slate-300 font-medium">Totales</span>
             </div>
-            <div className="text-center border-l border-slate-800 pl-4">
-              <span className="block text-xl font-bold text-orange-400 flex items-center justify-center gap-1">
-                <Flame size={16} /> 3
-              </span>
-              <span className="text-xs text-slate-300">Racha actual</span>
+            <div className="border-l border-slate-800">
+              <span className="block text-lg font-bold text-blue-400">{weeklyWorkouts}</span>
+              <span className="text-[11px] text-slate-300 font-medium">Esta semana</span>
+            </div>
+            <div className="border-l border-slate-800">
+              <span className="block text-lg font-bold text-indigo-400">{monthlyWorkouts}</span>
+              <span className="text-[11px] text-slate-300 font-medium">Este mes</span>
             </div>
           </div>
         </div>
@@ -139,12 +161,26 @@ export const Profile: React.FC = () => {
           </div>
         )}
 
+        {/* Share to AI Modal */}
+        <ShareToAIModal
+          isOpen={isShareAIOpen}
+          onClose={() => setIsShareAIOpen(false)}
+          workoutHistory={workoutHistory}
+        />
+
         {/*/ Sección de Días de Entrenamiento */}
         <div className="p-6">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <Calendar className="text-blue-500" size={24} />
-            Historial de Entrenamiento
-          </h2>
+          {/* Tarjeta Share to AI */}
+          {workoutHistory.length > 0 && (
+            <ShareToAIButton onClick={() => setIsShareAIOpen(true)} variant="banner" className="mb-6" />
+          )}
+
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <Calendar className="text-blue-500" size={24} />
+              Historial
+            </h2>
+          </div>
 
           <div className="space-y-4">
             {workoutHistory.map((session) => (

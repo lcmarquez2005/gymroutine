@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { WorkoutSession } from '../types';
 import { Trophy, Clock, Weight, CheckCircle2, Home } from 'lucide-react';
+import { ShareToAIButton } from '../components/ShareToAIButton';
+import { ShareToAIModal } from '../components/ShareToAIModal';
 
 export const WorkoutSummary: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const session = location.state?.session as WorkoutSession | undefined;
+  const [isShareAIOpen, setIsShareAIOpen] = useState(false);
 
   if (!session) {
     // Si no hay sesión (ej. navegación directa), volver al inicio
@@ -18,6 +21,13 @@ export const WorkoutSummary: React.FC = () => {
     <div className="min-h-screen bg-slate-900 flex justify-center pb-8">
       <div className="w-full max-w-md bg-slate-900 flex flex-col min-h-screen relative">
         
+        {/* Share to AI Modal */}
+        <ShareToAIModal
+          isOpen={isShareAIOpen}
+          onClose={() => setIsShareAIOpen(false)}
+          workoutHistory={[session]}
+        />
+
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-8 mt-12">
           
           {/* Trofeo y Título */}
@@ -78,6 +88,15 @@ export const WorkoutSummary: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Botón Share to AI Destacado */}
+          <div className="w-full animate-in fade-in duration-500 delay-400">
+            <ShareToAIButton
+              onClick={() => setIsShareAIOpen(true)}
+              variant="glowing"
+              className="w-full py-3.5 text-sm"
+            />
+          </div>
 
         </div>
 

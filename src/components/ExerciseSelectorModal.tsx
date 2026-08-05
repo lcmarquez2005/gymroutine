@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useWorkout } from '../hooks/useWorkout';
 import type { Exercise } from '../types';
-import { X, Plus, Search, Trash2, Dumbbell } from 'lucide-react';
+import { Plus, Search, Trash2, Dumbbell } from 'lucide-react';
+import { ModalCard } from './ModalCard';
 
 const normalizeString = (str: string | undefined): string => {
   if (!str) return '';
@@ -140,16 +141,12 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 w-full max-w-md rounded-3xl border border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-          <h3 className="font-bold text-lg text-white">Librería de Ejercicios</h3>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-800 rounded-full transition-colors">
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="p-4">
+    <ModalCard
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Librería de Ejercicios"
+      bodyClassName="p-4"
+    >
           {!isCreating ? (
             <>
               <div className="relative mb-4">
@@ -284,8 +281,6 @@ export const ExerciseSelectorModal: React.FC<ExerciseSelectorModalProps> = ({ is
               </div>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </ModalCard>
   );
 };
