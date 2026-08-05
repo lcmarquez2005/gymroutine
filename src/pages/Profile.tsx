@@ -1,12 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useWorkout } from '../hooks/useWorkout';
-import { Calendar, User as UserIcon, Activity, Flame, LogOut, Clock, Weight } from 'lucide-react';
+import { Calendar, User as UserIcon, Activity, Flame, LogOut, Clock, Weight, Download } from 'lucide-react';
 
 export const Profile: React.FC = () => {
   const { logout, user } = useAuth();
   const { workoutHistory } = useWorkout();
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+
+  // Estado PWA
+  const [deferredPrompt, setDeferredPrompt] = useState<any>((window as any).deferredPrompt || null);
+  const [canInstall, setCanInstall] = useState(Boolean((window as any).deferredPrompt));
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
+    || (window.navigator as any).standalone;
+
+  useEffect(() => {
+    if ((window as any).deferredPrompt) {
+      setDeferredPrompt((window as any).deferredPrompt);
+      setCanInstall(true);
+    }
+
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+
+    const handleCustomPrompt = (e: any) => {
+      setDeferredPrompt(e.detail);
+      setCanInstall(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('pwa-prompt-available', handleCustomPrompt);
+
+    if (isStandalone) {
+      setCanInstall(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('pwa-prompt-available', handleCustomPrompt);
+    };
+  }, [isStandalone]);
 
   if (!user) {
     return <div className="text-center mt-10">No se pudo cargar el perfil</div>;
@@ -44,7 +83,63 @@ export const Profile: React.FC = () => {
           </div>
         </div>
 
-        {/* Sección de Días de Entrenamiento */}
+        {/* Card de Instalación PWA */}
+        {!isStandalone && (canInstall || isIOS || isMobile) && (
+          <div className="px-6 pt-6">
+            <div className="bg-slate-800/90 border border-slate-700/60 rounded-3xl p-5 shadow-xl flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center flex-shrink-0 animate-pulse">
+                  <Download size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm">Instalar GymRoutine</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">
+                    Agrega el acceso directo para usar en pantalla completa y offline.
+                  </p>
+                </div>
+              </div>
+              
+              {canInstall ? (
+                <button
+                  onClick={async () => {
+                    if (deferredPrompt) {
+                      deferredPrompt.prompt();
+                      const { outcome } = await deferredPrompt.userChoice;
+                      if (outcome === 'accepted') {
+                        setCanInstall(false);
+                      }
+                    }
+                  }}
+                  className="w-full mt-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-xs transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-1.5 active:scale-95"
+                >
+                  <Download size={14} /> Descargar Aplicación
+                </button>
+              ) : isIOS ? (
+                <div className="mt-1 bg-slate-900/60 border border-slate-800 p-3 rounded-xl text-[10px] text-slate-300 leading-normal">
+                  <p className="font-semibold text-slate-200 mb-1 flex items-center gap-1">
+                    <span>📱</span> Pasos para instalar en iOS (Safari):
+                  </p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Presiona el botón <span className="font-bold text-blue-400">Compartir</span> en el navegador.</li>
+                    <li>Desliza y selecciona <span className="font-bold text-blue-400">Añadir a la pantalla de inicio</span>.</li>
+                  </ol>
+                </div>
+              ) : (
+                <div className="mt-1 bg-slate-900/60 border border-slate-800 p-3 rounded-xl text-[10px] text-slate-300 leading-normal">
+                  <p className="font-semibold text-slate-200 mb-1 flex items-center gap-1">
+                    <span>🤖</span> Pasos para instalar en tu navegador (Brave, Firefox, etc.):
+                  </p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Presiona el botón de <span className="font-bold text-blue-400">menú (los 3 puntos)</span> de tu navegador.</li>
+                    <li>Selecciona <span className="font-bold text-blue-400">Instalar aplicación</span> o <span className="font-bold text-blue-400">Añadir a pantalla de inicio</span>.</li>
+                  </ol>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/*/ Sección de Días de Entrenamiento */}
         <div className="p-6">
           <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <Calendar className="text-blue-500" size={24} />
