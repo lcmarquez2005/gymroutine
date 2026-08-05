@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Home, Dumbbell, User as UserIcon, BookOpen } from 'lucide-react';
+import { Home, Dumbbell, User as UserIcon, BookOpen, Maximize } from 'lucide-react';
 
 export const MainLayout: React.FC = () => {
   const { user } = useAuth();
@@ -14,11 +14,23 @@ export const MainLayout: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
   const showBottomNav = !location.pathname.startsWith('/workout');
 
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
   return (
-    <div className={`min-h-screen bg-slate-900 text-slate-100 flex justify-center ${showBottomNav ? 'pb-20' : ''}`}>
+    <div className="min-h-screen bg-slate-900 text-slate-100 flex justify-center">
       <div className="w-full max-w-md relative flex flex-col">
         {/* Content */}
-        <div className="flex-1 w-full">
+        <div className={`flex-1 w-full ${showBottomNav ? 'pb-24' : ''}`}>
           <Outlet />
         </div>
 
@@ -37,10 +49,22 @@ export const MainLayout: React.FC = () => {
               <BookOpen size={24} className={isActive('/exercises') ? 'fill-blue-500/10' : ''} />
               <span className="text-[10px] mt-1 font-semibold">Ejercicios</span>
             </Link>
-            <Link to="/profile" className={`flex flex-col items-center transition-colors duration-200 ${isActive('/profile') ? 'text-blue-500' : 'text-slate-400 hover:text-slate-200'}`}>
-              <UserIcon size={24} className={isActive('/profile') ? 'fill-blue-500/10' : ''} />
-              <span className="text-[10px] mt-1 font-semibold">Perfil</span>
-            </Link>
+            <div className="relative flex flex-col items-center">
+              <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-50">
+                <button 
+                  type="button"
+                  onClick={handleFullscreen}
+                  className="p-2 bg-slate-800 border border-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-full transition-all flex items-center justify-center shadow-lg shadow-black/40 hover:scale-110 active:scale-95 animate-float"
+                  title="Pantalla Completa"
+                >
+                  <Maximize size={24} />
+                </button>
+              </div>
+              <Link to="/profile" className={`flex flex-col items-center transition-colors duration-200 ${isActive('/profile') ? 'text-blue-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                <UserIcon size={24} className={isActive('/profile') ? 'fill-blue-500/10' : ''} />
+                <span className="text-[10px] mt-1 font-semibold">Perfil</span>
+              </Link>
+            </div>
           </div>
         )}
       </div>

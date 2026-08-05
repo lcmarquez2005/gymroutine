@@ -825,8 +825,8 @@ export const ExerciseLibrary: React.FC = () => {
 
       {/* FORMULARIO DE CREACIÓN/EDICIÓN (MODAL) */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 w-full max-w-md rounded-2xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 pb-24 sm:pb-4">
+          <div className="bg-slate-900 w-full max-w-md rounded-2xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-140px)] sm:max-h-[85vh] animate-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950 flex-shrink-0">
               <h3 className="font-bold text-white flex items-center gap-1.5">
                 <Sparkles className="text-blue-500" size={18} />

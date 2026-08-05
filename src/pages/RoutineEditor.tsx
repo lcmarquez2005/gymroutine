@@ -394,7 +394,12 @@ export const RoutineEditor: React.FC = () => {
                                   <input 
                                     type="text"
                                     value={set.targetRepRange || ''}
-                                    onChange={(e) => handleUpdateSetTarget(ex.tempId, set.id, { targetRepRange: e.target.value })}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (/^[0-9]*-?[0-9]*$/.test(val)) {
+                                        handleUpdateSetTarget(ex.tempId, set.id, { targetRepRange: val });
+                                      }
+                                    }}
                                     className="w-full bg-transparent border-none text-center text-white font-bold text-xs outline-none py-1 min-w-0"
                                     placeholder="8-12"
                                   />

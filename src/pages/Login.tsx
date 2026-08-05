@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Mail, Lock, Loader2, Maximize } from 'lucide-react';
+import { Mail, Lock, Loader2 } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -21,26 +21,10 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable fullscreen: ${err.message}`);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  };
+
 
   return (
     <div className="relative">
-      <button 
-        type="button"
-        onClick={handleFullscreen}
-        className="absolute -top-12 right-0 p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors flex items-center justify-center"
-        title="Pantalla Completa (Test PWA)"
-      >
-        <Maximize size={20} />
-      </button>
 
       <h3 className="text-xl font-bold text-slate-800 text-center mb-6 mt-4">Iniciar Sesión</h3>
       {error && (

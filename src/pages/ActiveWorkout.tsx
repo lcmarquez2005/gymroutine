@@ -4,6 +4,18 @@ import { useWorkout } from '../hooks/useWorkout';
 import type { Exercise } from '../types';
 import { Check, ChevronLeft, ChevronRight, Dumbbell, Save, Timer, Play, Pause, Square, MoreVertical, Plus, Minus, AlertTriangle } from 'lucide-react';
 
+const parseTargetRep = (targetRepRange: string | undefined): number => {
+  if (!targetRepRange) return 0;
+  const clean = targetRepRange.trim();
+  if (clean.includes('-')) {
+    const firstPart = clean.split('-')[0].trim();
+    const num = parseInt(firstPart, 10);
+    return isNaN(num) ? 0 : num;
+  }
+  const num = parseInt(clean, 10);
+  return isNaN(num) ? 0 : num;
+};
+
 export const ActiveWorkout: React.FC = () => {
   const { activeWorkout, updateSet, finishWorkout, updateExerciseFeedback } = useWorkout();
   const navigate = useNavigate();
@@ -141,11 +153,11 @@ export const ActiveWorkout: React.FC = () => {
     }
 
     let newY = timerOffset.y;
-    const absTop = 96 + newY;
+    const absTop = 12 + newY;
     const maxTop = window.innerHeight - rect.height - 90;
-    const minTop = 20;
-    if (absTop < minTop) newY = minTop - 96;
-    if (absTop > maxTop) newY = maxTop - 96;
+    const minTop = 4;
+    if (absTop < minTop) newY = minTop - 12;
+    if (absTop > maxTop) newY = maxTop - 12;
 
 
     setTimerOffset({ x: newX, y: newY });
@@ -254,7 +266,7 @@ export const ActiveWorkout: React.FC = () => {
         {/* Temporizador Flotante (Si hay restTime) */}
         {currentExercise.restTime && currentExercise.restTime > 0 ? (
           <div
-            className={`fixed top-24 right-4 z-50 flex items-center gap-2 bg-slate-800/95 backdrop-blur-md border border-slate-700 p-2 rounded-full shadow-2xl cursor-grab active:cursor-grabbing touch-none ${isDraggingTimer ? '' : 'transition-transform duration-300 ease-out'}`}
+            className={`fixed top-3 right-4 z-50 flex items-center gap-2 bg-slate-800/95 backdrop-blur-md border border-slate-700 p-2 rounded-full shadow-2xl cursor-grab active:cursor-grabbing touch-none ${isDraggingTimer ? '' : 'transition-transform duration-300 ease-out'}`}
             style={{ transform: `translate3d(${timerOffset.x}px, ${timerOffset.y}px, 0)` }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -501,7 +513,7 @@ export const ActiveWorkout: React.FC = () => {
                           type="button"
                           disabled={set.completed}
                           onClick={() => {
-                            const currentVal = set.reps !== undefined ? set.reps : (set.setType === 'TIME' ? (set.targetTimeSeconds || 0) : Number(set.targetRepRange || 0));
+                            const currentVal = set.reps !== undefined ? set.reps : (set.setType === 'TIME' ? (set.targetTimeSeconds || 0) : parseTargetRep(set.targetRepRange));
                             const step = set.setType === 'TIME' ? 5 : 1;
                             updateSet(currentIndex, sIndex, { reps: Math.max(0, currentVal - step) });
                           }}
@@ -523,7 +535,7 @@ export const ActiveWorkout: React.FC = () => {
                           type="button"
                           disabled={set.completed}
                           onClick={() => {
-                            const currentVal = set.reps !== undefined ? set.reps : (set.setType === 'TIME' ? (set.targetTimeSeconds || 0) : Number(set.targetRepRange || 0));
+                            const currentVal = set.reps !== undefined ? set.reps : (set.setType === 'TIME' ? (set.targetTimeSeconds || 0) : parseTargetRep(set.targetRepRange));
                             const step = set.setType === 'TIME' ? 5 : 1;
                             updateSet(currentIndex, sIndex, { reps: currentVal + step });
                           }}
@@ -539,7 +551,23 @@ export const ActiveWorkout: React.FC = () => {
                   </div>
                   <div className="flex justify-center">
                     <button
-                      onClick={() => updateSet(currentIndex, sIndex, { completed: !set.completed })}
+                      onClick={() => {
+                        const newCompleted = !set.completed;
+                        const updates: Partial<typeof set> = { completed: newCompleted };
+                        if (newCompleted) {
+                          if (set.reps === undefined) {
+                            if (set.setType === 'TIME') {
+                              updates.reps = set.targetTimeSeconds || 0;
+                            } else {
+                              updates.reps = parseTargetRep(set.targetRepRange);
+                            }
+                          }
+                          if (set.weight === undefined && set.setType !== 'TIME') {
+                            updates.weight = set.targetWeight !== undefined ? set.targetWeight : 0;
+                          }
+                        }
+                        updateSet(currentIndex, sIndex, updates);
+                      }}
                       className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 ${set.completed
                         ? 'bg-green-500 text-white shadow-lg shadow-green-500/40 scale-110'
                         : 'bg-slate-700 text-slate-400 hover:bg-slate-600'

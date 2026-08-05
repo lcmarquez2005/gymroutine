@@ -30,3 +30,16 @@ img {
   user-select: none;
   pointer-events: auto;
 }
+
+/* Animación levitante/flotante suave para elementos premium */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.animate-float {
+  animation: float 2.5s ease-in-out infinite;
+}
